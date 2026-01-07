@@ -407,7 +407,7 @@ p_bottom <- ggplot(phq_sum, aes(x = group, y = m, color = group)) +
 
 fig2 <- p_top / p_bottom + plot_layout(heights = c(1, 1))
 
-# ggsave("figs/fig2_slow_box_phq_bottom.pdf", fig2, width = 7, height = 9, units = "in")
+# ggsave("figs/fig2_slow_top_phq_bottom.pdf", fig2, width = 7, height = 9, units = "in")
 
 
 # ───────────────────────────────────────────────────────────────────────────────
