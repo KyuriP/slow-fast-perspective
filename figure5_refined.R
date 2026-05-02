@@ -165,7 +165,7 @@ pA <- ggplot(
   ) +
   theme_paper +
   theme(
-    legend.position = "right"
+    legend.position = "bottom"
   )
 
 
@@ -199,7 +199,7 @@ symptom_names <- c(
   slp = "sleep problems",
   con = "concentration",
   anh = "anhedonia",
-  ene = "low energy / fatigue"
+  ene = "low energy"
 )
 
 # Shared network
@@ -335,7 +335,7 @@ p_abbrev_key <- ggplot(abbr_df, aes(x = 0, y = y)) +
     label = "Abbreviations",
     hjust = 0,
     family = pal_family,
-    size = 5
+    size = 4
   ) +
   xlim(0, 1.55) +
   ylim(0.5, max(abbr_df$y) + 1.6) +
@@ -363,7 +363,8 @@ fig5_final
 # ggsave(
 #   filename = "figs/fig5_final.pdf",
 #   plot = fig5_final,
-#   width = 8.2,
-#   height = 9.2,
+#   width = 10,
+#   height = 10.2,
 #   units = "in"
 # )
+
