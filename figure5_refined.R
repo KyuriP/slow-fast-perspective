@@ -157,9 +157,9 @@ pA <- ggplot(
     values = c("Marginal" = 17, "Conditional" = 16)
   )+
   labs(
-    title = "(a) Marginal and conditional associations with slow-risk burden",
+    title = "(a) Marginal and conditional associations with Slow Risk Load",
     x = NULL,
-    y = "Log odds per 1 SD slow-risk burden",
+    y = "Log odds per 1 SD Slow Risk Load",
     color = NULL,
     shape = NULL
   ) +
@@ -203,7 +203,7 @@ symptom_names <- c(
 )
 
 # Shared network
-W_plot <- as.matrix(J_shared)
+W_plot <- as.matrix(joint_global$J)
 diag(W_plot) <- 0
 
 edge_plot_tbl <- which(upper.tri(W_plot), arr.ind = TRUE) %>%
@@ -282,7 +282,7 @@ p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
     )
   ) +
   labs(
-    title = "(b) Conditional slow-risk associations in the shared network"
+    title = "(b) Conditional Slow Risk Load associations in the shared network"
   ) +
   theme_paper +
   theme(
@@ -361,7 +361,7 @@ fig5_final <- (pA / pB_final) +
 fig5_final
 
 # ggsave(
-#   filename = "figs/fig5_final.pdf",
+#   filename = "figs/fig5_refined.pdf",
 #   plot = fig5_final,
 #   width = 10,
 #   height = 10.2,
