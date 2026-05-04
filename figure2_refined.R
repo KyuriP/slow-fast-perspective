@@ -44,7 +44,6 @@ p_phq_top <- ggplot(phq_sum, aes(x = group, y = m, color = group)) +
   theme_paper +
   theme(
     strip.text   = element_text(face = "bold", size = 13),
-    axis.text.x  = element_blank(),
     axis.ticks.x = element_blank(),
     plot.margin  = margin(b = 2)
   )
@@ -68,6 +67,7 @@ p_srl_bottom <- ggplot(slow_facet_df,
   theme_paper +
   theme(
     strip.text  = element_blank(),
+    axis.text.x  = element_blank(),
     plot.margin = margin(t = 2)
   )
 
