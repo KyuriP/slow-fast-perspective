@@ -363,8 +363,8 @@ fig5_final
 # ggsave(
 #   filename = "figs/fig5_refined.pdf",
 #   plot = fig5_final,
-#   width = 10,
-#   height = 10.2,
+#   width = 11.5,
+#   height = 11.7,
 #   units = "in"
 # )
 
