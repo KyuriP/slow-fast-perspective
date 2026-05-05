@@ -31,16 +31,29 @@
 # 0) Setup
 # ───────────────────────────────────────────────────────────────────────────────
 
+
 make_binary <- function(x) as.integer(x > 0)
 
-# Use short symptom codes in the figure
-# (If you later want longer labels, we can swap them in easily.)
+# Use one consistent symptom-label dictionary throughout the figure
+symptom_names <- c(
+  dep = "depressed mood",
+  mot = "psychomotor change",
+  glt = "guilt",
+  sui = "suicidality",
+  app = "appetite change",
+  slp = "sleep problems",
+  con = "concentration",
+  anh = "anhedonia",
+  ene = "low energy"
+)
+
+# Order for panel (a), strongest conditional association at top
 symptom_code_order <- c("dep", "mot", "glt", "sui", "app", "slp", "con", "anh", "ene")
 
-# Highlighted subset for network panel
-cluster <- c("anh", "slp", "ene", "app", "con")
-
 # Colors
+col_covariate_adjusted <- "grey65"
+col_symptom_adjusted   <- "#2C7FB8"
+
 col_marginal    <- "grey65"
 col_conditional <- "#2C7FB8"   # blue
 col_other_nodes <- "grey80"
@@ -126,7 +139,11 @@ symptom_order <- symptom_reg_conditional %>%
 
 compare_srl <- compare_srl %>%
   mutate(
-    model = factor(model, levels = c("Marginal", "Conditional")),
+    model = factor(
+      model,
+      levels = c("Marginal", "Conditional"),
+      labels = c("Covariate-adjusted", "Symptom-adjusted")
+    ),
     symptom = factor(symptom, levels = rev(symptom_order))
   )
 
@@ -150,30 +167,66 @@ pA <- ggplot(
     position = position_dodge(width = 0.55)
   ) +
   coord_flip() +
+  scale_x_discrete(labels = symptom_names) +
   scale_color_manual(
-    values = c("Marginal" = col_marginal, "Conditional" = col_conditional)
+    values = c(
+      "Covariate-adjusted" = col_covariate_adjusted,
+      "Symptom-adjusted"   = col_symptom_adjusted
+    )
   ) +
   scale_shape_manual(
-    values = c("Marginal" = 17, "Conditional" = 16)
-  )+
-  labs(
-    title = "(a) Marginal and conditional associations with Slow Risk Load",
-    x = NULL,
-    y = "Log odds per 1 SD Slow Risk Load",
+    values = c(
+      "Covariate-adjusted" = 17,
+      "Symptom-adjusted"   = 16
+    )
+  ) +
+    labs(
+      title = "(a) Symptom-specific associations with Slow Risk Load",
+      x = NULL,
+      y = "Association with symptom activation\n(log odds per 1 SD Slow Risk Load)",
     color = NULL,
     shape = NULL
   ) +
   theme_paper +
   theme(
+    text = element_text(size = 18),
+    plot.title = element_text(size = 19, face = "bold", hjust = 0),
+    axis.title.x = element_text(size = 17),
+    axis.text = element_text(size = 16),
+    legend.text = element_text(size = 16),
+    legend.position = "bottom"
+  )
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Figure 5 text-size + label refinements
+# Apply this after pA is created, then replace the network panel code below.
+# ───────────────────────────────────────────────────────────────────────────────
+
+# ---- Panel (a): update labels and scale text up ----
+pA <- pA +
+  labs(
+    title = "(a) Log odds per 1 SD Slow Risk Load",
+    x = NULL,
+    y = "Slow-layer associations with symptom activation",
+    color = NULL,
+    shape = NULL
+  ) +
+  theme(
+    text = element_text(size = 18),
+    plot.title = element_text(size = 19, face = "bold", hjust = 0),
+    axis.title.x = element_text(size = 17),
+    axis.text = element_text(size = 16),
+    legend.text = element_text(size = 16),
     legend.position = "bottom"
   )
 
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Refined network panel for Figure 5
-# Node fill = conditional slow-risk association from panel (a)
+# Node fill = conditional Slow Risk Load association from panel (a)
 # Edge width = shared-network coupling strength
 # ───────────────────────────────────────────────────────────────────────────────
+
 library(dplyr)
 library(tibble)
 library(ggplot2)
@@ -190,6 +243,17 @@ if (is.null(pal_family) || identical(pal_family, "")) {
   pal_family <- "Palatino"
 }
 
+
+
+# Larger text controls
+title_size      <- 19
+node_label_size <- 5.4
+legend_title_sz <- 14
+legend_text_sz  <- 13
+abbr_title_sz   <- 4.8
+abbr_text_sz    <- 4.8
+abbr_dot_size   <- 4.8
+
 symptom_names <- c(
   dep = "depressed mood",
   mot = "psychomotor change",
@@ -202,7 +266,7 @@ symptom_names <- c(
   ene = "low energy"
 )
 
-# Shared network
+# Shared network from jointly estimated model
 W_plot <- as.matrix(joint_global$J)
 diag(W_plot) <- 0
 
@@ -233,7 +297,6 @@ igraph::E(g)$weight <- edge_plot_tbl$abs_weight
 cond_min <- min(node_plot_tbl$conditional_logOR, na.rm = TRUE)
 cond_max <- max(node_plot_tbl$conditional_logOR, na.rm = TRUE)
 
-# Same palette for nodes and side key
 blue_fun <- scales::col_numeric(
   palette = c("#EAF3FB", "#A8C8E8", "#5B95C8", "#08519C"),
   domain = c(cond_min, cond_max)
@@ -252,31 +315,31 @@ p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
   geom_node_point(
     aes(fill = conditional_logOR),
     shape = 21,
-    size = 6.6,
+    size = 7.2,
     color = "black",
-    stroke = 0.45
+    stroke = 0.5
   ) +
   geom_node_text(
     aes(label = name),
     repel = TRUE,
-    size = 4.8,
+    size = node_label_size,
     family = pal_family
   ) +
-  scale_edge_width(range = c(0.3, 2.4)) +
+  scale_edge_width(range = c(0.35, 2.6)) +
   scale_fill_gradientn(
     colours = c("#EAF3FB", "#A8C8E8", "#5B95C8", "#08519C"),
     values = scales::rescale(c(cond_min, 0.27, 0.34, cond_max)),
     limits = c(cond_min, cond_max),
     breaks = c(0.25, 0.30, 0.35, 0.40),
-    name = "Conditional\nassociation"
+    name = "Conditional association\nwith symptom activation"
   ) +
   guides(
     fill = guide_colorbar(
       title.position = "top",
       title.hjust = 0.5,
       label.position = "right",
-      barheight = unit(8.2, "cm"),
-      barwidth  = unit(0.55, "cm"),
+      barheight = unit(8.8, "cm"),
+      barwidth  = unit(0.62, "cm"),
       frame.colour = "black",
       ticks.colour = "black"
     )
@@ -286,18 +349,19 @@ p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
   ) +
   theme_paper +
   theme(
-    text = element_text(family = pal_family),
+    text = element_text(family = pal_family, size = 18),
     axis.title = element_blank(),
     axis.text = element_blank(),
     axis.ticks = element_blank(),
     panel.grid = element_blank(),
     panel.border = element_blank(),
     legend.position = "right",
-    legend.title = element_text(size = 10, family = pal_family),
-    legend.text = element_text(size = 9, family = pal_family),
-    plot.title = element_text(hjust = 0, family = pal_family),
-    plot.margin = margin(5.5, 5.5, 5.5, 5.5)
+    legend.title = element_text(size = legend_title_sz, family = pal_family),
+    legend.text = element_text(size = legend_text_sz, family = pal_family),
+    plot.title = element_text(size = title_size, face = "bold", hjust = 0, family = pal_family),
+    plot.margin = margin(0, 0, 0, 0)
   )
+
 
 # --- Abbreviation key with colored dots ---
 abbr_df <- node_plot_tbl %>%
@@ -312,15 +376,15 @@ p_abbrev_key <- ggplot(abbr_df, aes(x = 0, y = y)) +
   geom_point(
     aes(fill = conditional_logOR),
     shape = 21,
-    size = 4.2,
+    size = abbr_dot_size,
     color = "black",
-    stroke = 0.35
+    stroke = 0.4
   ) +
   geom_text(
-    aes(x = 0.16, label = label),
+    aes(x = 0.18, label = label),
     hjust = 0,
     family = pal_family,
-    size = 4.1
+    size = abbr_text_sz
   ) +
   scale_fill_gradientn(
     colours = c("#EAF3FB", "#A8C8E8", "#5B95C8", "#08519C"),
@@ -335,36 +399,34 @@ p_abbrev_key <- ggplot(abbr_df, aes(x = 0, y = y)) +
     label = "Abbreviations",
     hjust = 0,
     family = pal_family,
-    size = 4
+    size = abbr_title_sz,
+    fontface = "bold"
   ) +
-  xlim(0, 1.55) +
-  ylim(0.5, max(abbr_df$y) + 1.6) +
+  xlim(0, 2.15) +
+  ylim(0.5, max(abbr_df$y) + 1.7) +
   theme_void() +
   theme(
-    plot.margin = margin(35, 5, 5, 5)
+    plot.margin = margin(0, 0, 0, 0)
   )
 
 # --- Final panel (b): network + abbreviation key ---
 pB_final <- p_network_main + p_abbrev_key +
-  plot_layout(widths = c(4.9, 1.65))
+  plot_layout(widths = c(4.6, 2.9))
 
 pB_final
 
 
 # ───────────────────────────────────────────────────────────────────────────────
-# 5) Final Figure 5
+# Final Figure 5
 # ───────────────────────────────────────────────────────────────────────────────
 
-fig5_final <- (pA / pB_final) +
-  patchwork::plot_layout(heights = c(1.08, 1))
-
+fig5_final <- (pA / pB_final)
 fig5_final
 
 # ggsave(
 #   filename = "figs/fig5_refined.pdf",
 #   plot = fig5_final,
-#   width = 11.5,
-#   height = 11.7,
+#   width = 12,
+#   height = 12,
 #   units = "in"
 # )
-
