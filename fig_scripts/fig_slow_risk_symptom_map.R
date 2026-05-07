@@ -418,14 +418,14 @@ pB_final <- pB_title / pB_body +
 # Final Figure 5
 # ───────────────────────────────────────────────────────────────────────────────
 
-fig5_final <- (pA / pB_final) +
+fig_slow_risk_symptom_map <- (pA / pB_final) +
   plot_layout(heights = c(1.05, 1))
 
-fig5_final
+fig_slow_risk_symptom_map
 
 # ggsave(
 #   filename = "figs/fig5_refined.pdf",
-#   plot = fig5_final,
+#   plot = fig_slow_risk_symptom_map,
 #   width = 12,
 #   height = 12,
 #   units = "in"

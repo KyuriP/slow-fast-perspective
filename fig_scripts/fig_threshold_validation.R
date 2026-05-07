@@ -318,13 +318,13 @@ p_baseline_joint <- ggplot(
     panel.grid.minor = element_blank()
   )
 
-fig3_joint <- p_baseline_joint
+fig_threshold_validation <- p_baseline_joint
 
-fig3_joint
+fig_threshold_validation
 
 # ggsave(
 #   "figs/fig3_baseline_activation_joint_globalJ.pdf",
-#   fig3_joint,
+#   fig_threshold_validation,
 #   width = 8.2,
 #   height = 5.4,
 #   units = "in"
