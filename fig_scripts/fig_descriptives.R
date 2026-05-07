@@ -13,6 +13,10 @@ xlab_group <- function(x) dplyr::recode(
   .default = x
 )
 
+# ───────────────────────────────────────────────────────────────────────────────
+# Plotting data
+# ───────────────────────────────────────────────────────────────────────────────
+
 # Long table for Slow Risk Load faceting
 slow_facet_df <- analysis_df %>%
   select(slow_risk_z, slow_group, dutch_grp, age_grp) %>%
@@ -65,27 +69,41 @@ phq_sum <- phq_long %>%
   )
 
 # Facets to visually de-emphasize
+# xmin/xmax/ymin/ymax are explicit to avoid geom_rect length warnings.
 veil_df <- data.frame(
   group_type = factor(
     c("Ethnicity", "Age Group"),
     levels = c("Slow-Risk Group", "Ethnicity", "Age Group")
-  )
+  ),
+  xmin = -Inf,
+  xmax = Inf,
+  ymin = -Inf,
+  ymax = Inf
 )
 
-# ── TOP PANEL: PHQ-9 mean + 99% CI ─────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────────────────────
+# Top panel: PHQ-9 mean + 99% CI
+# ───────────────────────────────────────────────────────────────────────────────
 
 p_phq_top <- ggplot(phq_sum, aes(x = group, y = m, color = group)) +
   geom_point(size = 2.8, shape = 1) +
   geom_errorbar(aes(ymin = lo, ymax = hi), width = 0.2, linewidth = 0.5) +
   geom_rect(
     data = veil_df,
-    aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf),
+    aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
     fill = "white",
     alpha = veil_alpha,
     inherit.aes = FALSE
   ) +
   facet_grid(. ~ group_type, scales = "free_x", space = "free_x") +
-  labs(x = NULL,     y = paste0("Average depressive\nsymptom score (", round(ci_level * 100), "% CI)")) +
+  labs(
+    x = NULL,
+    y = paste0(
+      "Average depressive\nsymptom score (",
+      round(ci_level * 100),
+      "% CI)"
+    )
+  ) +
   scale_x_discrete(labels = xlab_group, drop = TRUE) +
   scale_color_manual(values = group_colors, drop = FALSE, guide = "none") +
   theme_paper +
@@ -95,7 +113,9 @@ p_phq_top <- ggplot(phq_sum, aes(x = group, y = m, color = group)) +
     plot.margin = margin(b = 2)
   )
 
-# ── BOTTOM PANEL: Slow Risk Load distributions ────────────────────────────────
+# ───────────────────────────────────────────────────────────────────────────────
+# Bottom panel: Slow Risk Load distributions
+# ───────────────────────────────────────────────────────────────────────────────
 
 p_srl_bottom <- ggplot(
   slow_facet_df,
@@ -104,7 +124,7 @@ p_srl_bottom <- ggplot(
   geom_boxplot(alpha = 0.85, outlier.alpha = 0.20) +
   geom_rect(
     data = veil_df,
-    aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf),
+    aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
     fill = "white",
     alpha = veil_alpha,
     inherit.aes = FALSE
@@ -124,12 +144,9 @@ p_srl_bottom <- ggplot(
     plot.margin = margin(t = 2)
   )
 
-# ── COMBINE ───────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────────────────────
+# Combine
+# ───────────────────────────────────────────────────────────────────────────────
 
 fig_descriptives <- p_phq_top / p_srl_bottom +
   plot_layout(heights = c(1, 1))
-
-fig_descriptives
-
-# ggsave("figs/fig2_refined.pdf", fig_descriptives, width = 7, height = 9, units = "in")
-
