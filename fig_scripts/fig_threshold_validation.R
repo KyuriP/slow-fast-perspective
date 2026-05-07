@@ -1,20 +1,27 @@
 # ───────────────────────────────────────────────────────────────────────────────
-# JOINT ISING MODEL WITH ONE GLOBAL SHARED J
+# FIGURE: Threshold validation / baseline activation
 #
-# Model:
+# Joint Ising model with one global shared J:
+#
 #   P(Y_n | X_n) ∝ exp(
 #     sum_i h_i(X_n) Y_ni + sum_{i<j} J_ij Y_ni Y_nj
 #   )
 #
 # where:
+#
 #   h_i(X_n) = alpha_i
 #            + gamma_slow_i * HighSlow_n
 #            + gamma_eth_i  * NonDutch_n
 #            + gamma_age_i  * Older_n
 #
 # One J is shared across everyone.
-# Baseline activation is allowed to vary with group indicators.
+# Baseline activation varies with group indicators.
 # All parameters are estimated jointly.
+# ───────────────────────────────────────────────────────────────────────────────
+
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Helpers for exact-likelihood Ising estimation
 # ───────────────────────────────────────────────────────────────────────────────
 
 logsumexp <- function(x) {
@@ -32,11 +39,18 @@ make_pair_index <- function(p) {
 
 pair_products <- function(X, pair_index) {
   out <- matrix(NA_real_, nrow = nrow(X), ncol = nrow(pair_index))
+  
   for (k in seq_len(nrow(pair_index))) {
     out[, k] <- X[, pair_index[k, 1]] * X[, pair_index[k, 2]]
   }
+  
   out
 }
+
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Joint Ising model with shared J and covariate-varying external fields
+# ───────────────────────────────────────────────────────────────────────────────
 
 fit_ising_globalJ_covH <- function(df_bin, symptoms, covars,
                                    maxit = 1000, verbose = TRUE) {
@@ -59,15 +73,17 @@ fit_ising_globalJ_covH <- function(df_bin, symptoms, covars,
   
   states <- make_state_space(p)
   colnames(states) <- symptoms
+  
   state_pairs <- pair_products(states, pair_index)
   
   # Group rows by unique covariate profile.
-  # With 3 binary covariates, there are at most 8 profiles.
+  # With three binary covariates, there are at most eight profiles.
   profile_id <- apply(Z, 1, paste, collapse = "_")
   profiles <- unique(profile_id)
   
   profile_stats <- lapply(profiles, function(pid) {
     idx <- which(profile_id == pid)
+    
     Xc <- X[idx, , drop = FALSE]
     Zc <- Z[idx[1], , drop = FALSE]
     
@@ -80,13 +96,14 @@ fit_ising_globalJ_covH <- function(df_bin, symptoms, covars,
   })
   
   # Parameter vector:
-  #   alpha: p baseline external fields
-  #   Gamma: p x q covariate effects on external fields
-  #   J: n_edges shared pairwise interactions
+  #   alpha: baseline external fields, length p
+  #   Gamma: covariate effects on external fields, p x q
+  #   J: shared pairwise interactions, length p * (p - 1) / 2
   #
   # par = c(alpha, as.vector(Gamma), J_edges)
   
   eps <- 0.005
+  
   alpha_init <- qlogis(pmin(pmax(colMeans(X), eps), 1 - eps))
   Gamma_init <- rep(0, p * q)
   J_init <- rep(0, n_edges)
@@ -165,9 +182,9 @@ fit_ising_globalJ_covH <- function(df_bin, symptoms, covars,
 }
 
 
-
 # ───────────────────────────────────────────────────────────────────────────────
 # Prepare covariates for external-field shifts
+#
 # Reference profile:
 #   Low Slow Risk, Dutch, Younger
 # ───────────────────────────────────────────────────────────────────────────────
@@ -181,6 +198,11 @@ analysis_df_bin <- analysis_df_bin %>%
 
 covars <- c("high_slow", "non_dutch", "older")
 
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Fit joint model
+# ───────────────────────────────────────────────────────────────────────────────
+
 joint_global <- fit_ising_globalJ_covH(
   df_bin = analysis_df_bin,
   symptoms = symptoms,
@@ -190,16 +212,15 @@ joint_global <- fit_ising_globalJ_covH(
 )
 
 
-
-
-
 # ───────────────────────────────────────────────────────────────────────────────
-# Extract adjusted baseline activation probabilities for figure
+# Extract adjusted baseline activation probabilities for plotting
+#
 # Other covariates are held at their sample means.
 # ───────────────────────────────────────────────────────────────────────────────
 
 get_baseline_prob <- function(fit, z_profile) {
   h <- fit$alpha + as.numeric(fit$Gamma %*% z_profile)
+  
   tibble::tibble(
     symptom = names(h),
     h = as.numeric(h),
@@ -220,9 +241,30 @@ profiles <- tibble::tibble(
     "Dutch", "Non-Dutch",
     "Younger", "Older"
   ),
-  high_slow = c(0, 1, z_mean["high_slow"], z_mean["high_slow"], z_mean["high_slow"], z_mean["high_slow"]),
-  non_dutch = c(z_mean["non_dutch"], z_mean["non_dutch"], 0, 1, z_mean["non_dutch"], z_mean["non_dutch"]),
-  older     = c(z_mean["older"], z_mean["older"], z_mean["older"], z_mean["older"], 0, 1)
+  high_slow = c(
+    0,
+    1,
+    z_mean["high_slow"],
+    z_mean["high_slow"],
+    z_mean["high_slow"],
+    z_mean["high_slow"]
+  ),
+  non_dutch = c(
+    z_mean["non_dutch"],
+    z_mean["non_dutch"],
+    0,
+    1,
+    z_mean["non_dutch"],
+    z_mean["non_dutch"]
+  ),
+  older = c(
+    z_mean["older"],
+    z_mean["older"],
+    z_mean["older"],
+    z_mean["older"],
+    0,
+    1
+  )
 )
 
 h_long_joint <- purrr::pmap_dfr(
@@ -242,23 +284,31 @@ h_long_joint <- purrr::pmap_dfr(
   }
 ) %>%
   mutate(
-    facet = factor(facet, levels = c("Slow-Risk Group", "Ethnicity", "Age Group")),
+    facet = factor(
+      facet,
+      levels = c("Slow-Risk Group", "Ethnicity", "Age Group")
+    ),
     group = factor(group, levels = names(group_colors))
   )
 
 
-
-
-
-
+# ───────────────────────────────────────────────────────────────────────────────
+# Plot settings
+# ───────────────────────────────────────────────────────────────────────────────
 
 veil_alpha <- 0.6
 
+# Facets to visually de-emphasize.
+# xmin/xmax/ymin/ymax are explicit to avoid geom_rect length warnings.
 veil_df <- data.frame(
   facet = factor(
     c("Ethnicity", "Age Group"),
     levels = c("Slow-Risk Group", "Ethnicity", "Age Group")
-  )
+  ),
+  xmin = -Inf,
+  xmax = Inf,
+  ymin = -Inf,
+  ymax = Inf
 )
 
 symptom_labels <- c(
@@ -273,7 +323,11 @@ symptom_labels <- c(
   anh = "Anhedonia"
 )
 
-# Order by average baseline activation in the Slow-Risk comparison
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Order symptoms by average baseline activation in the Slow-Risk comparison
+# ───────────────────────────────────────────────────────────────────────────────
+
 symptom_order_fig3 <- h_long_joint %>%
   filter(facet == "Slow-Risk Group") %>%
   group_by(symptom) %>%
@@ -284,6 +338,11 @@ symptom_order_fig3 <- h_long_joint %>%
 h_long_joint <- h_long_joint %>%
   mutate(symptom = factor(symptom, levels = symptom_order_fig3))
 
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Plot baseline activation probabilities
+# ───────────────────────────────────────────────────────────────────────────────
+
 p_baseline_joint <- ggplot(
   h_long_joint,
   aes(x = symptom, y = baseline_prob, color = group, group = group)
@@ -292,7 +351,7 @@ p_baseline_joint <- ggplot(
   geom_line(linewidth = 0.5) +
   geom_rect(
     data = veil_df,
-    aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf),
+    aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
     fill = "white",
     alpha = veil_alpha,
     inherit.aes = FALSE

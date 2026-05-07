@@ -1,5 +1,6 @@
 # ───────────────────────────────────────────────────────────────────────────────
-# FIGURE 5 (refined):
+# FIGURE: Slow Risk Load symptom map
+#
 #   (a) Symptom-specific links to Slow Risk Load
 #   (b) Symptom-adjusted Slow Risk Load associations in the shared symptom network
 # ───────────────────────────────────────────────────────────────────────────────
@@ -21,8 +22,9 @@ library(scales)
 # Assumes these objects already exist:
 #   analysis_df
 #   symptom_vars
-#   joint_global       # from shared-network Ising model
+#   joint_global       # from the joint shared-network Ising model
 #   theme_paper
+
 
 # ───────────────────────────────────────────────────────────────────────────────
 # 0) Setup
@@ -30,7 +32,7 @@ library(scales)
 
 make_binary <- function(x) as.integer(x > 0)
 
-# Use one consistent symptom-label dictionary throughout the figure
+# Symptom-label dictionary used throughout the figure
 symptom_names <- c(
   dep = "depressed mood",
   mot = "psychomotor change",
@@ -49,22 +51,23 @@ col_symptom_adjusted   <- "#2C7FB8"
 
 # Font
 pal_family <- theme_paper$text$family
+
 if (is.null(pal_family) || identical(pal_family, "")) {
   pal_family <- "Palatino"
 }
 
-# Larger text controls
+# Text controls
 title_size       <- 19
 axis_title_size  <- 17
 axis_text_size   <- 16
 legend_text_size <- 16
 
-node_label_size  <- 5.4
-legend_title_sz  <- 14
-legend_text_sz   <- 13
-abbr_title_sz    <- 4.8
-abbr_text_sz     <- 4.8
-abbr_dot_size    <- 4.8
+node_label_size <- 5.4
+legend_title_sz <- 14
+legend_text_sz  <- 13
+abbr_title_sz   <- 4.8
+abbr_text_sz    <- 4.8
+abbr_dot_size   <- 4.8
 
 
 # ───────────────────────────────────────────────────────────────────────────────
@@ -92,7 +95,6 @@ if (!identical(sort(symptom_vars), sort(rownames(joint_global$J)))) {
 # ───────────────────────────────────────────────────────────────────────────────
 
 symptom_reg_covariate <- purrr::map_dfr(symptom_vars, function(sym) {
-  
   response <- paste0(sym, "_bin")
   
   f <- reformulate(
@@ -127,7 +129,6 @@ symptom_reg_covariate <- purrr::map_dfr(symptom_vars, function(sym) {
 # ───────────────────────────────────────────────────────────────────────────────
 
 symptom_reg_adjusted <- purrr::map_dfr(symptom_vars, function(sym) {
-  
   response <- paste0(sym, "_bin")
   other_terms <- paste0(setdiff(symptom_vars, sym), "_bin")
   
@@ -180,7 +181,10 @@ compare_srl <- compare_srl %>%
       model,
       levels = c("Covariate-adjusted", "Symptom-adjusted")
     ),
-    symptom = factor(symptom, levels = rev(symptom_order))
+    symptom = factor(
+      symptom,
+      levels = rev(symptom_order)
+    )
   )
 
 
@@ -235,7 +239,12 @@ pA <- ggplot(
   theme_paper +
   theme(
     text = element_text(size = 18, family = pal_family),
-    plot.title = element_text(size = title_size, face = "bold", hjust = 0, family = pal_family),
+    plot.title = element_text(
+      size = title_size,
+      face = "bold",
+      hjust = 0,
+      family = pal_family
+    ),
     axis.title.x = element_text(size = axis_title_size, family = pal_family),
     axis.text = element_text(size = axis_text_size, family = pal_family),
     legend.text = element_text(size = legend_text_size, family = pal_family),
@@ -258,7 +267,7 @@ edge_plot_tbl <- which(upper.tri(W_plot), arr.ind = TRUE) %>%
   as.data.frame() %>%
   transmute(
     from = rownames(W_plot)[row],
-    to   = colnames(W_plot)[col],
+    to = colnames(W_plot)[col],
     abs_weight = abs(W_plot[cbind(row, col)])
   ) %>%
   filter(abs_weight > 0)
@@ -288,7 +297,11 @@ blue_fun <- scales::col_numeric(
 
 set.seed(123)
 
-# --- Main network plot ---
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 6.1) Main network plot
+# ───────────────────────────────────────────────────────────────────────────────
+
 p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
   geom_edge_link(
     aes(edge_width = abs_weight),
@@ -323,7 +336,7 @@ p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
       title.hjust = 0.5,
       label.position = "right",
       barheight = unit(8.8, "cm"),
-      barwidth  = unit(0.62, "cm"),
+      barwidth = unit(0.62, "cm"),
       frame.colour = "black",
       ticks.colour = "black"
     )
@@ -344,7 +357,10 @@ p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
   )
 
 
-# --- Abbreviation key with colored dots ---
+# ───────────────────────────────────────────────────────────────────────────────
+# 6.2) Abbreviation key with colored dots
+# ───────────────────────────────────────────────────────────────────────────────
+
 abbr_df <- node_plot_tbl %>%
   mutate(
     label = paste0(name, " = ", full_name),
@@ -391,7 +407,10 @@ p_abbrev_key <- ggplot(abbr_df, aes(x = 0, y = y)) +
   )
 
 
-# --- Final panel (b): network + colorbar + abbreviation key ---
+# ───────────────────────────────────────────────────────────────────────────────
+# 6.3) Final panel B: network + colorbar + abbreviation key
+# ───────────────────────────────────────────────────────────────────────────────
+
 pB_title <- ggplot() +
   labs(
     title = "(b) Symptom-adjusted Slow Risk Load links in the shared network"
@@ -415,7 +434,7 @@ pB_final <- pB_title / pB_body +
 
 
 # ───────────────────────────────────────────────────────────────────────────────
-# Final Figure 5
+# Final figure
 # ───────────────────────────────────────────────────────────────────────────────
 
 fig_slow_risk_symptom_map <- (pA / pB_final) +

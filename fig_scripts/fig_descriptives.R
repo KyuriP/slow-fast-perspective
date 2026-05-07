@@ -150,3 +150,5 @@ p_srl_bottom <- ggplot(
 
 fig_descriptives <- p_phq_top / p_srl_bottom +
   plot_layout(heights = c(1, 1))
+
+# ggsave("figs/fig2_refined.pdf", fig_descriptives, width = 7, height = 9, units = "in")
