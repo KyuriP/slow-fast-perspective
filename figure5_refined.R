@@ -1,36 +1,32 @@
 # ───────────────────────────────────────────────────────────────────────────────
-# FIGURE 5 (final): 
-#   (a) Marginal and conditional associations with slow-risk burden
-#   (b) Shared symptom network with highlighted symptom subset
+# FIGURE 5 (refined):
+#   (a) Symptom-specific links to Slow Risk Load
+#   (b) Symptom-adjusted Slow Risk Load associations in the shared symptom network
 # ───────────────────────────────────────────────────────────────────────────────
 
-# Required packages:
-# library(dplyr)
-# library(tidyr)
-# library(purrr)
-# library(tibble)
-# library(broom)
-# library(ggplot2)
-# library(ggrepel)
-# library(patchwork)
-# library(igraph)
-# library(ggraph)
+# Required packages
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(tibble)
+library(broom)
+library(ggplot2)
+library(igraph)
+library(ggraph)
+library(ggrepel)
+library(grid)
+library(patchwork)
+library(scales)
 
 # Assumes these objects already exist:
 #   analysis_df
 #   symptom_vars
-#   symptom_reg          # earlier marginal models
-#   J_shared
+#   joint_global       # from shared-network Ising model
 #   theme_paper
-
-# symptom_reg should be the earlier marginal regressions:
-#   make_binary(symptom) ~ slow_risk_z + age + gender_grp + dutch_grp
-
 
 # ───────────────────────────────────────────────────────────────────────────────
 # 0) Setup
 # ───────────────────────────────────────────────────────────────────────────────
-
 
 make_binary <- function(x) as.integer(x > 0)
 
@@ -47,24 +43,32 @@ symptom_names <- c(
   ene = "low energy"
 )
 
-# Order for panel (a), strongest conditional association at top
-symptom_code_order <- c("dep", "mot", "glt", "sui", "app", "slp", "con", "anh", "ene")
-
 # Colors
 col_covariate_adjusted <- "grey65"
 col_symptom_adjusted   <- "#2C7FB8"
 
-col_marginal    <- "grey65"
-col_conditional <- "#2C7FB8"   # blue
-col_other_nodes <- "grey80"
-col_cluster     <- "#2C7FB8"
-col_other_edges <- "grey75"
-col_cluster_edg <- "#2C7FB8"
+# Font
+pal_family <- theme_paper$text$family
+if (is.null(pal_family) || identical(pal_family, "")) {
+  pal_family <- "Palatino"
+}
+
+# Larger text controls
+title_size       <- 19
+axis_title_size  <- 17
+axis_text_size   <- 16
+legend_text_size <- 16
+
+node_label_size  <- 5.4
+legend_title_sz  <- 14
+legend_text_sz   <- 13
+abbr_title_sz    <- 4.8
+abbr_text_sz     <- 4.8
+abbr_dot_size    <- 4.8
 
 
 # ───────────────────────────────────────────────────────────────────────────────
-# 1) Conditional / nodewise logistic regressions
-#    symptom_j ~ SRL + age + gender + ethnicity + all other symptoms
+# 1) Prepare binary symptom data
 # ───────────────────────────────────────────────────────────────────────────────
 
 analysis_bin <- analysis_df %>%
@@ -76,12 +80,53 @@ analysis_bin <- analysis_df %>%
     )
   )
 
-# Basic checks
-if (!identical(sort(symptom_vars), sort(rownames(J_shared)))) {
-  warning("symptom_vars and rownames(J_shared) differ; check naming consistency.")
+# Check naming consistency with the shared Ising network
+if (!identical(sort(symptom_vars), sort(rownames(joint_global$J)))) {
+  warning("symptom_vars and rownames(joint_global$J) differ; check naming consistency.")
 }
 
-symptom_reg_conditional <- purrr::map_dfr(symptom_vars, function(sym) {
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 2) Covariate-adjusted logistic regressions
+#    symptom_j ~ Slow Risk Load + age + gender + ethnicity
+# ───────────────────────────────────────────────────────────────────────────────
+
+symptom_reg_covariate <- purrr::map_dfr(symptom_vars, function(sym) {
+  
+  response <- paste0(sym, "_bin")
+  
+  f <- reformulate(
+    termlabels = c(
+      "slow_risk_z",
+      "age",
+      "gender_grp",
+      "dutch_grp"
+    ),
+    response = response
+  )
+  
+  m <- glm(f, data = analysis_bin, family = binomial())
+  
+  broom::tidy(m) %>%
+    dplyr::filter(term == "slow_risk_z") %>%
+    dplyr::mutate(
+      symptom = sym,
+      model = "Covariate-adjusted"
+    )
+}) %>%
+  mutate(
+    logOR      = estimate,
+    logOR_low  = estimate - 1.96 * std.error,
+    logOR_high = estimate + 1.96 * std.error
+  )
+
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 3) Symptom-adjusted logistic regressions
+#    symptom_j ~ Slow Risk Load + age + gender + ethnicity + all other symptoms
+# ───────────────────────────────────────────────────────────────────────────────
+
+symptom_reg_adjusted <- purrr::map_dfr(symptom_vars, function(sym) {
   
   response <- paste0(sym, "_bin")
   other_terms <- paste0(setdiff(symptom_vars, sym), "_bin")
@@ -103,7 +148,7 @@ symptom_reg_conditional <- purrr::map_dfr(symptom_vars, function(sym) {
     dplyr::filter(term == "slow_risk_z") %>%
     dplyr::mutate(
       symptom = sym,
-      model = "Conditional"
+      model = "Symptom-adjusted"
     )
 }) %>%
   mutate(
@@ -114,26 +159,18 @@ symptom_reg_conditional <- purrr::map_dfr(symptom_vars, function(sym) {
 
 
 # ───────────────────────────────────────────────────────────────────────────────
-# 2) Combine with marginal estimates
+# 4) Combine model results for panel (a)
 # ───────────────────────────────────────────────────────────────────────────────
 
-symptom_reg_marginal2 <- symptom_reg %>%
-  mutate(
-    model      = "Marginal",
-    logOR      = estimate,
-    logOR_low  = estimate - 1.96 * std.error,
-    logOR_high = estimate + 1.96 * std.error
-  )
-
 compare_srl <- bind_rows(
-  symptom_reg_marginal2 %>%
+  symptom_reg_covariate %>%
     select(symptom, model, logOR, logOR_low, logOR_high),
-  symptom_reg_conditional %>%
+  symptom_reg_adjusted %>%
     select(symptom, model, logOR, logOR_low, logOR_high)
 )
 
-# Order by conditional coefficients, strongest at top
-symptom_order <- symptom_reg_conditional %>%
+# Order symptoms by symptom-adjusted association, strongest at top
+symptom_order <- symptom_reg_adjusted %>%
   arrange(desc(logOR)) %>%
   pull(symptom)
 
@@ -141,15 +178,14 @@ compare_srl <- compare_srl %>%
   mutate(
     model = factor(
       model,
-      levels = c("Marginal", "Conditional"),
-      labels = c("Covariate-adjusted", "Symptom-adjusted")
+      levels = c("Covariate-adjusted", "Symptom-adjusted")
     ),
     symptom = factor(symptom, levels = rev(symptom_order))
   )
 
 
 # ───────────────────────────────────────────────────────────────────────────────
-# 3) Panel A
+# 5) Panel A: symptom-specific Slow Risk Load associations
 # ───────────────────────────────────────────────────────────────────────────────
 
 pA <- ggplot(
@@ -160,10 +196,10 @@ pA <- ggplot(
     aes(ymin = logOR_low, ymax = logOR_high),
     width = 0.18,
     position = position_dodge(width = 0.55),
-    linewidth = 0.6
+    linewidth = 0.65
   ) +
   geom_point(
-    size = 2.6,
+    size = 2.9,
     position = position_dodge(width = 0.55)
   ) +
   coord_flip() +
@@ -180,93 +216,41 @@ pA <- ggplot(
       "Symptom-adjusted"   = 16
     )
   ) +
-    labs(
-      title = "(a) Symptom-specific associations with Slow Risk Load",
-      x = NULL,
-      y = "Association with symptom activation\n(log odds per 1 SD Slow Risk Load)",
+  guides(
+    color = guide_legend(
+      override.aes = list(
+        size = 3.4,
+        linewidth = 1.0
+      ),
+      byrow = TRUE
+    )
+  ) +
+  labs(
+    title = "(a) Symptom-specific links to Slow Risk Load",
+    x = NULL,
+    y = "Association between Slow Risk Load and symptom activation\n(log-odds change per 1 SD Slow Risk Load)",
     color = NULL,
     shape = NULL
   ) +
   theme_paper +
   theme(
-    text = element_text(size = 18),
-    plot.title = element_text(size = 19, face = "bold", hjust = 0),
-    axis.title.x = element_text(size = 17),
-    axis.text = element_text(size = 16),
-    legend.text = element_text(size = 16),
-    legend.position = "bottom"
-  )
-
-# ───────────────────────────────────────────────────────────────────────────────
-# Figure 5 text-size + label refinements
-# Apply this after pA is created, then replace the network panel code below.
-# ───────────────────────────────────────────────────────────────────────────────
-
-# ---- Panel (a): update labels and scale text up ----
-pA <- pA +
-  labs(
-    title = "(a) Log odds per 1 SD Slow Risk Load",
-    x = NULL,
-    y = "Slow-layer associations with symptom activation",
-    color = NULL,
-    shape = NULL
-  ) +
-  theme(
-    text = element_text(size = 18),
-    plot.title = element_text(size = 19, face = "bold", hjust = 0),
-    axis.title.x = element_text(size = 17),
-    axis.text = element_text(size = 16),
-    legend.text = element_text(size = 16),
-    legend.position = "bottom"
+    text = element_text(size = 18, family = pal_family),
+    plot.title = element_text(size = title_size, face = "bold", hjust = 0, family = pal_family),
+    axis.title.x = element_text(size = axis_title_size, family = pal_family),
+    axis.text = element_text(size = axis_text_size, family = pal_family),
+    legend.text = element_text(size = legend_text_size, family = pal_family),
+    legend.position = "bottom",
+    legend.key.width = unit(2.2, "cm"),
+    legend.spacing.x = unit(0.55, "cm"),
+    plot.margin = margin(5, 5, 5, 5)
   )
 
 
 # ───────────────────────────────────────────────────────────────────────────────
-# Refined network panel for Figure 5
-# Node fill = conditional Slow Risk Load association from panel (a)
-# Edge width = shared-network coupling strength
+# 6) Panel B: shared network with symptom-adjusted associations
 # ───────────────────────────────────────────────────────────────────────────────
 
-library(dplyr)
-library(tibble)
-library(ggplot2)
-library(igraph)
-library(ggraph)
-library(ggrepel)
-library(grid)
-library(patchwork)
-library(scales)
-
-# Font
-pal_family <- theme_paper$text$family
-if (is.null(pal_family) || identical(pal_family, "")) {
-  pal_family <- "Palatino"
-}
-
-
-
-# Larger text controls
-title_size      <- 19
-node_label_size <- 5.4
-legend_title_sz <- 14
-legend_text_sz  <- 13
-abbr_title_sz   <- 4.8
-abbr_text_sz    <- 4.8
-abbr_dot_size   <- 4.8
-
-symptom_names <- c(
-  dep = "depressed mood",
-  mot = "psychomotor change",
-  glt = "guilt",
-  sui = "suicidality",
-  app = "appetite change",
-  slp = "sleep problems",
-  con = "concentration",
-  anh = "anhedonia",
-  ene = "low energy"
-)
-
-# Shared network from jointly estimated model
+# Shared network from jointly estimated Ising model
 W_plot <- as.matrix(joint_global$J)
 diag(W_plot) <- 0
 
@@ -279,10 +263,10 @@ edge_plot_tbl <- which(upper.tri(W_plot), arr.ind = TRUE) %>%
   ) %>%
   filter(abs_weight > 0)
 
-node_plot_tbl <- symptom_reg_conditional %>%
+node_plot_tbl <- symptom_reg_adjusted %>%
   transmute(
     name = symptom,
-    conditional_logOR = logOR,
+    symptom_adjusted_logOR = logOR,
     full_name = recode(symptom, !!!symptom_names)
   )
 
@@ -294,8 +278,8 @@ g <- igraph::graph_from_data_frame(
 
 igraph::E(g)$weight <- edge_plot_tbl$abs_weight
 
-cond_min <- min(node_plot_tbl$conditional_logOR, na.rm = TRUE)
-cond_max <- max(node_plot_tbl$conditional_logOR, na.rm = TRUE)
+cond_min <- min(node_plot_tbl$symptom_adjusted_logOR, na.rm = TRUE)
+cond_max <- max(node_plot_tbl$symptom_adjusted_logOR, na.rm = TRUE)
 
 blue_fun <- scales::col_numeric(
   palette = c("#EAF3FB", "#A8C8E8", "#5B95C8", "#08519C"),
@@ -313,7 +297,7 @@ p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
     show.legend = FALSE
   ) +
   geom_node_point(
-    aes(fill = conditional_logOR),
+    aes(fill = symptom_adjusted_logOR),
     shape = 21,
     size = 7.2,
     color = "black",
@@ -331,7 +315,7 @@ p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
     values = scales::rescale(c(cond_min, 0.27, 0.34, cond_max)),
     limits = c(cond_min, cond_max),
     breaks = c(0.25, 0.30, 0.35, 0.40),
-    name = "Conditional association\nwith symptom activation"
+    name = "Symptom-adjusted\nlink to Slow Risk Load"
   ) +
   guides(
     fill = guide_colorbar(
@@ -344,9 +328,7 @@ p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
       ticks.colour = "black"
     )
   ) +
-  labs(
-    title = "(b) Conditional Slow Risk Load associations in the shared network"
-  ) +
+  labs(title = NULL) +
   theme_paper +
   theme(
     text = element_text(family = pal_family, size = 18),
@@ -358,7 +340,6 @@ p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
     legend.position = "right",
     legend.title = element_text(size = legend_title_sz, family = pal_family),
     legend.text = element_text(size = legend_text_sz, family = pal_family),
-    plot.title = element_text(size = title_size, face = "bold", hjust = 0, family = pal_family),
     plot.margin = margin(0, 0, 0, 0)
   )
 
@@ -367,14 +348,14 @@ p_network_main <- ggraph(g, layout = "fr", weights = igraph::E(g)$weight) +
 abbr_df <- node_plot_tbl %>%
   mutate(
     label = paste0(name, " = ", full_name),
-    fill_col = blue_fun(conditional_logOR)
+    fill_col = blue_fun(symptom_adjusted_logOR)
   ) %>%
-  arrange(desc(conditional_logOR)) %>%
+  arrange(desc(symptom_adjusted_logOR)) %>%
   mutate(y = rev(seq_len(n())))
 
 p_abbrev_key <- ggplot(abbr_df, aes(x = 0, y = y)) +
   geom_point(
-    aes(fill = conditional_logOR),
+    aes(fill = symptom_adjusted_logOR),
     shape = 21,
     size = abbr_dot_size,
     color = "black",
@@ -402,25 +383,44 @@ p_abbrev_key <- ggplot(abbr_df, aes(x = 0, y = y)) +
     size = abbr_title_sz,
     fontface = "bold"
   ) +
-  xlim(0, 2.15) +
+  xlim(0, 2.45) +
   ylim(0.5, max(abbr_df$y) + 1.7) +
   theme_void() +
   theme(
     plot.margin = margin(0, 0, 0, 0)
   )
 
-# --- Final panel (b): network + abbreviation key ---
-pB_final <- p_network_main + p_abbrev_key +
-  plot_layout(widths = c(4.6, 2.9))
 
-pB_final
+# --- Final panel (b): network + colorbar + abbreviation key ---
+pB_title <- ggplot() +
+  labs(
+    title = "(b) Symptom-adjusted Slow Risk Load links in the shared network"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(
+      size = title_size,
+      face = "bold",
+      hjust = 0,
+      family = pal_family
+    ),
+    plot.margin = margin(0, 0, 2, 0)
+  )
+
+pB_body <- p_network_main + p_abbrev_key +
+  plot_layout(widths = c(4.6, 3.0))
+
+pB_final <- pB_title / pB_body +
+  plot_layout(heights = c(0.10, 1))
 
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Final Figure 5
 # ───────────────────────────────────────────────────────────────────────────────
 
-fig5_final <- (pA / pB_final)
+fig5_final <- (pA / pB_final) +
+  plot_layout(heights = c(1.05, 1))
+
 fig5_final
 
 # ggsave(
