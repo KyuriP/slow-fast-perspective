@@ -1,0 +1,5 @@
+"Model_key","Model","Parameters","Convergence_code","Maximum_absolute_gradient","Mean_absolute_gradient","Minimum_Hessian_eigenvalue","Hessian_condition_number","Positive_definite_Hessian","Covariance_matrix_available"
+"free_J_free_h","Fully group-specific",90,0,0.000850612315844046,0.000261498166315101,21.5287650913432,2367.72095308653,TRUE,TRUE
+"equal_J_free_h","Common interactions",54,0,3.24730879128765e-05,1.92737324087804e-05,37.8133319240321,1726.47565361488,TRUE,TRUE
+"free_J_equal_h","Common activation",81,0,4.3645965433825e-05,1.91562533520207e-05,26.9412690618537,2001.15211952818,TRUE,TRUE
+"equal_J_equal_h","Fully invariant",45,0,0.000500765739161579,0.000269203079629834,58.4807307009736,1401.75684458749,TRUE,TRUE
