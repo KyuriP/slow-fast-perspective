@@ -9,15 +9,9 @@
 #   Table A4  Edge-specific Network Comparison Test results
 #   Figure A1 Sensitivity of activation differences to interaction specification
 #
-# Expected input files:
-#
-#   results/network_invariance_exact/slow_risk/
-#     exact_multigroup_ising/exact_multigroup_models.rds
-#     nct_result.rds
-#
 # Run from the repository root:
 #
-#   source("R/05_build_appendix_outputs.R")
+#   source("R/07_build_appendix_outputs.R")
 #
 # Outputs are written to:
 #
@@ -37,7 +31,18 @@ EXACT_RESULTS_PATH <- file.path(
   "exact_multigroup_models.rds"
 )
 
+# Preferred final NCT object produced by the 10,000-permutation analysis.
 NCT_RESULTS_PATH <- file.path(
+  "results",
+  "network_invariance_exact",
+  "slow_risk",
+  "nct_10000",
+  "nct_result_10000.rds"
+)
+
+# Backward-compatible fallback for repositories that still store the same
+# final NCT object at the older location.
+NCT_RESULTS_FALLBACK <- file.path(
   "results",
   "network_invariance_exact",
   "slow_risk",
@@ -50,6 +55,11 @@ FIGURE_DIR <- file.path(OUTPUT_DIR, "figures")
 
 dir.create(TABLE_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(FIGURE_DIR, recursive = TRUE, showWarnings = FALSE)
+
+
+# ------------------------------------------------------------------------------
+# 1. Package and input checks
+# ------------------------------------------------------------------------------
 
 required_packages <- c("ggplot2", "knitr")
 
@@ -79,16 +89,29 @@ if (!file.exists(EXACT_RESULTS_PATH)) {
 }
 
 if (!file.exists(NCT_RESULTS_PATH)) {
-  stop(
-    "Could not find NCT results at:\n",
-    NCT_RESULTS_PATH,
-    call. = FALSE
-  )
+  if (file.exists(NCT_RESULTS_FALLBACK)) {
+    warning(
+      "Preferred final NCT object was not found at:\n",
+      NCT_RESULTS_PATH,
+      "\nUsing fallback object:\n",
+      NCT_RESULTS_FALLBACK,
+      "\nConfirm that this is the final 10,000-permutation result."
+    )
+    NCT_RESULTS_PATH <- NCT_RESULTS_FALLBACK
+  } else {
+    stop(
+      "Could not find the final NCT results at either:\n",
+      NCT_RESULTS_PATH,
+      "\nor:\n",
+      NCT_RESULTS_FALLBACK,
+      call. = FALSE
+    )
+  }
 }
 
 
 # ------------------------------------------------------------------------------
-# 1. Load saved model objects
+# 2. Load saved model objects
 # ------------------------------------------------------------------------------
 
 exact_results <- readRDS(EXACT_RESULTS_PATH)
@@ -162,7 +185,7 @@ model_labels <- c(
 
 
 # ------------------------------------------------------------------------------
-# 2. Helper functions
+# 3. Helper functions
 # ------------------------------------------------------------------------------
 
 write_csv <- function(x, filename) {
@@ -324,7 +347,7 @@ make_activation_table <- function(model_name) {
 
 
 # ------------------------------------------------------------------------------
-# 3. Table A1: optimization and Hessian diagnostics
+# 4. Table A1: optimization and Hessian diagnostics
 # ------------------------------------------------------------------------------
 
 appendix_table_A1 <- do.call(
@@ -416,12 +439,12 @@ write_latex_table(
     "Optimization diagnostics for the four exact multigroup Ising models.",
     "A convergence code of zero indicates successful termination."
   ),
-  "tab:appendix_optimization"
+  "appendix_optimization"
 )
 
 
 # ------------------------------------------------------------------------------
-# 4. Table A2: fully group-specific activation estimates
+# 5. Table A2: fully group-specific activation estimates
 # ------------------------------------------------------------------------------
 
 appendix_table_A2 <- make_activation_table(
@@ -475,12 +498,12 @@ write_latex_table(
     "Ising model. Both interaction and activation parameters were",
     "estimated separately in the Low and High Slow Risk groups."
   ),
-  "tab:appendix_activation_free"
+  "appendix_activation_free"
 )
 
 
 # ------------------------------------------------------------------------------
-# 5. Table A3: common-interaction activation estimates
+# 6. Table A3: common-interaction activation estimates
 # ------------------------------------------------------------------------------
 
 appendix_table_A3 <- make_activation_table(
@@ -534,12 +557,12 @@ write_latex_table(
     "interactions constrained to equality and activation parameters",
     "estimated separately across groups."
   ),
-  "tab:appendix_activation_commonJ"
+  "appendix_activation_commonJ"
 )
 
 
 # ------------------------------------------------------------------------------
-# 6. Figure A1: sensitivity of activation estimates
+# 7. Figure A1: sensitivity of activation estimates
 # ------------------------------------------------------------------------------
 
 figure_data <- rbind(
@@ -635,10 +658,10 @@ ggplot2::ggsave(
 
 
 # ------------------------------------------------------------------------------
-# 7. Table A4: all 36 NCT edge comparisons
+# 8. Table A4: all 36 NCT edge comparisons
 # ------------------------------------------------------------------------------
 
-required_nct_elements <- c("nw1", "nw2")
+required_nct_elements <- c("nw1", "nw2", "einv.perm")
 
 missing_nct_elements <- setdiff(
   required_nct_elements,
@@ -666,20 +689,13 @@ edge_high <- as.numeric(
   nct_result$nw2[edge_positions]
 )
 
-# Reconstruct the unadjusted edge-specific permutation p-values from
-# the saved permutation distribution.
-
-if (is.null(nct_result$einv.perm)) {
-  stop(
-    "The saved NCT object does not contain einv.perm, so the raw ",
-    "edge-specific permutation p-values cannot be reconstructed."
-  )
-}
-
 perm <- nct_result$einv.perm
 
 if (length(dim(perm)) != 3L) {
-  stop("nct_result$einv.perm must be a three-dimensional array.")
+  stop(
+    "nct_result$einv.perm must be a three-dimensional array.",
+    call. = FALSE
+  )
 }
 
 n_permutations <- dim(perm)[3]
@@ -691,14 +707,14 @@ observed_abs_difference <- abs(
 p_raw <- vapply(
   seq_len(q),
   function(k) {
-    
+
     i <- pair_index[k, 1]
     j <- pair_index[k, 2]
-    
+
     permuted_abs_difference <- abs(
       perm[i, j, seq_len(n_permutations)]
     )
-    
+
     (
       sum(
         permuted_abs_difference >=
@@ -709,86 +725,10 @@ p_raw <- vapply(
   numeric(1)
 )
 
-p_holm <- p.adjust(
+p_holm <- stats::p.adjust(
   p_raw,
   method = "holm"
 )
-
-# Some NCT versions store the edgewise p-values as the final column.
-if (is.null(p_holm) && !is.null(nct_result$einv.pvals)) {
-  p_matrix <- as.data.frame(nct_result$einv.pvals)
-
-  numeric_columns <- vapply(
-    p_matrix,
-    is.numeric,
-    logical(1)
-  )
-
-  if (any(numeric_columns)) {
-    candidate <- p_matrix[, which(numeric_columns), drop = FALSE]
-
-    if (nrow(candidate) == q) {
-      p_holm <- as.numeric(candidate[, ncol(candidate)])
-    }
-  }
-}
-
-# Reconstruct raw permutation p-values only when necessary.
-if (is.null(p_raw)) {
-
-  if (is.null(nct_result$einv.perm)) {
-    warning(
-      "Raw NCT edge p-values could not be found or reconstructed. ",
-      "Table A4 will contain adjusted values only."
-    )
-
-    p_raw <- rep(NA_real_, q)
-  } else {
-
-    perm <- nct_result$einv.perm
-
-    if (length(dim(perm)) != 3L) {
-      stop(
-        "nct_result$einv.perm is not a three-dimensional array.",
-        call. = FALSE
-      )
-    }
-
-    n_permutations <- dim(perm)[3]
-
-    observed_abs_difference <- abs(
-      edge_high - edge_low
-    )
-
-    p_raw <- vapply(
-      seq_len(q),
-      function(k) {
-
-        i <- pair_index[k, 1]
-        j <- pair_index[k, 2]
-
-        permuted_difference <- abs(
-          perm[i, j, seq_len(n_permutations)]
-        )
-
-        (
-          sum(
-            permuted_difference >=
-              observed_abs_difference[k]
-          ) + 1
-        ) / (n_permutations + 1)
-      },
-      numeric(1)
-    )
-  }
-}
-
-if (is.null(p_holm)) {
-  p_holm <- stats::p.adjust(
-    p_raw,
-    method = "holm"
-  )
-}
 
 if (length(p_raw) != q || length(p_holm) != q) {
   stop(
@@ -870,49 +810,60 @@ write_latex_table(
     "High Slow Risk groups. The signed difference is High minus Low.",
     "Both unadjusted and Holm-adjusted permutation p-values are shown."
   ),
-  "tab:appendix_nct_edges",
+  "appendix_nct_edges",
   longtable = TRUE
 )
 
 
 # ------------------------------------------------------------------------------
-# 8. Verification summary
+# 9. Verification summary
 # ------------------------------------------------------------------------------
 
 cat("\nAppendix outputs created successfully.\n\n")
+
+cat("Exact-model input:\n", normalizePath(EXACT_RESULTS_PATH), "\n\n")
+cat("NCT input:\n", normalizePath(NCT_RESULTS_PATH), "\n\n")
 
 cat("Table A1: optimization diagnostics\n")
 print(appendix_table_A1)
 
 cat("\nTable A2: fully group-specific activation contrasts\n")
 print(
-  round(
-    appendix_table_A2[
-      ,
-      c(
-        "Delta_h",
-        "SE_Delta_h",
-        "CI_lower",
-        "CI_upper"
-      )
-    ],
-    3
+  data.frame(
+    Symptom = appendix_table_A2$Symptom,
+    round(
+      appendix_table_A2[
+        ,
+        c(
+          "Delta_h",
+          "SE_Delta_h",
+          "CI_lower",
+          "CI_upper"
+        )
+      ],
+      3
+    ),
+    row.names = NULL
   )
 )
 
 cat("\nTable A3: common-interaction activation contrasts\n")
 print(
-  round(
-    appendix_table_A3[
-      ,
-      c(
-        "Delta_h",
-        "SE_Delta_h",
-        "CI_lower",
-        "CI_upper"
-      )
-    ],
-    3
+  data.frame(
+    Symptom = appendix_table_A3$Symptom,
+    round(
+      appendix_table_A3[
+        ,
+        c(
+          "Delta_h",
+          "SE_Delta_h",
+          "CI_lower",
+          "CI_upper"
+        )
+      ],
+      3
+    ),
+    row.names = NULL
   )
 )
 
