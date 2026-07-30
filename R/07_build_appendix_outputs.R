@@ -1,5 +1,5 @@
 # ==============================================================================
-# R/05_build_appendix_outputs.R
+# R/07_build_appendix_outputs.R
 #
 # Builds all appendix outputs used in the manuscript:
 #
@@ -666,47 +666,52 @@ edge_high <- as.numeric(
   nct_result$nw2[edge_positions]
 )
 
-# Prefer raw and adjusted p-values already stored in the NCT object.
-# If only adjusted values are stored, reconstruct raw permutation p-values
-# from the saved permutation array.
+# Reconstruct the unadjusted edge-specific permutation p-values from
+# the saved permutation distribution.
 
-extract_p_column <- function(x, possible_names) {
-  if (is.null(x)) {
-    return(NULL)
-  }
-
-  if (is.data.frame(x) || is.matrix(x)) {
-    matching <- intersect(
-      possible_names,
-      colnames(x)
-    )
-
-    if (length(matching) > 0L) {
-      return(as.numeric(x[, matching[1]]))
-    }
-  }
-
-  NULL
+if (is.null(nct_result$einv.perm)) {
+  stop(
+    "The saved NCT object does not contain einv.perm, so the raw ",
+    "edge-specific permutation p-values cannot be reconstructed."
+  )
 }
 
-p_raw <- extract_p_column(
-  nct_result$einv.pvals,
-  c(
-    "p.value",
-    "p",
-    "p_unadjusted",
-    "unadjusted"
-  )
+perm <- nct_result$einv.perm
+
+if (length(dim(perm)) != 3L) {
+  stop("nct_result$einv.perm must be a three-dimensional array.")
+}
+
+n_permutations <- dim(perm)[3]
+
+observed_abs_difference <- abs(
+  edge_high - edge_low
 )
 
-p_holm <- extract_p_column(
-  nct_result$einv.pvals,
-  c(
-    "p.adjusted",
-    "p_adj",
-    "p_holm",
-    "adjusted"
-  )
+p_raw <- vapply(
+  seq_len(q),
+  function(k) {
+    
+    i <- pair_index[k, 1]
+    j <- pair_index[k, 2]
+    
+    permuted_abs_difference <- abs(
+      perm[i, j, seq_len(n_permutations)]
+    )
+    
+    (
+      sum(
+        permuted_abs_difference >=
+          observed_abs_difference[k]
+      ) + 1
+    ) / (n_permutations + 1)
+  },
+  numeric(1)
+)
+
+p_holm <- p.adjust(
+  p_raw,
+  method = "holm"
 )
 
 # Some NCT versions store the edgewise p-values as the final column.

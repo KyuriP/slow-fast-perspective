@@ -256,7 +256,7 @@ fig_S2 <- ggplot(
     )
   ) +
   labs(
-    title = "Activation estimates under alternative interaction constraints",
+    title = "Activation estimates across model specifications",
     x = "Activation difference (High minus Low Slow Risk)",
     y = NULL,
     color = NULL,

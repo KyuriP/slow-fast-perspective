@@ -65,7 +65,17 @@ if (is.null(rownames(network_high))) {
   rownames(network_high) <- colnames(network_high) <- SYMPTOMS
 }
 
-node_labels <- unname(SYMPTOM_LABELS[rownames(network_low)])
+node_labels <- c(
+  anh = "Anh",
+  dep = "Dep",
+  slp = "Slp",
+  ene = "Ene",
+  app = "App",
+  glt = "Glt",
+  con = "Con",
+  mot = "Mot",
+  sui = "Sui"
+)[rownames(network_low)]
 
 layout_shared <- qgraph::averageLayout(
   network_low,
@@ -103,16 +113,16 @@ draw_networks <- function() {
     network_low,
     layout = layout_shared,
     labels = node_labels,
-    label.cex = 0.85,
+    label.cex = 1.15,
     color = "white",
     border.color = LOW_COLOR,
     border.width = 2,
-    vsize = 8.2,
+    vsize = 7.6,
     esize = 8,
     maximum = maximum_edge,
     minimum = 0,
     cut = 0,
-    details = TRUE,
+    details = FALSE,
     legend = FALSE,
     title = paste0(
       "Low Slow Risk\nGlobal strength = ",
@@ -124,16 +134,16 @@ draw_networks <- function() {
     network_high,
     layout = layout_shared,
     labels = node_labels,
-    label.cex = 0.85,
+    label.cex = 1.15,
     color = "white",
     border.color = HIGH_COLOR,
     border.width = 2,
-    vsize = 8.2,
+    vsize = 7.6,
     esize = 8,
     maximum = maximum_edge,
     minimum = 0,
     cut = 0,
-    details = TRUE,
+    details = FALSE,
     legend = FALSE,
     title = paste0(
       "High Slow Risk\nGlobal strength = ",

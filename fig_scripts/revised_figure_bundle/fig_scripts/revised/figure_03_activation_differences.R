@@ -1,5 +1,5 @@
 # ==============================================================================
-# Main Figure 3: activation differences from the fully group-specific Ising model
+# Main Figure 3: activation differences from the fully group-specific model
 # ==============================================================================
 
 if (!exists("theme_revised")) {
@@ -24,6 +24,11 @@ activation <- read.csv(
     symptom_label = ifelse(
       is.na(symptom_label) | symptom_label == "",
       unname(SYMPTOM_LABELS[symptom]),
+      symptom_label
+    ),
+    symptom_label = ifelse(
+      symptom == "con",
+      "Concentration problems",
       symptom_label
     ),
     direction = ifelse(
@@ -52,6 +57,9 @@ write.csv(
   "results/figure_data/figure_03_activation_differences.csv",
   row.names = FALSE
 )
+
+x_min <- min(activation$ci_95_lower) - 0.04
+x_max <- max(activation$ci_95_upper) + 0.04
 
 fig_03 <- ggplot(
   activation,
@@ -90,12 +98,17 @@ fig_03 <- ggplot(
     guide = "none"
   ) +
   scale_x_continuous(
-    breaks = seq(-0.4, 0.8, by = 0.2),
-    limits = c(-0.42, 0.84)
+    breaks = seq(-0.4, 0.8, by = 0.2)
+  ) +
+  coord_cartesian(
+    xlim = c(x_min, x_max)
   ) +
   labs(
-    title = "Activation differences remain when interactions are freely estimated",
-    subtitle = "\u2190 Higher activation in Low Slow Risk     Higher activation in High Slow Risk \u2192",
+    title = "Symptom activation differences",
+    subtitle = paste(
+      "\u2190 Higher in Low Slow Risk",
+      "     Higher in High Slow Risk \u2192"
+    ),
     x = "Activation difference (High minus Low Slow Risk)",
     y = NULL
   ) +
@@ -106,7 +119,10 @@ fig_03 <- ggplot(
       color = DARK_GREY,
       margin = margin(b = 6)
     ),
-    panel.grid.major.x = element_line(color = "grey90", linewidth = 0.45),
+    panel.grid.major.x = element_line(
+      color = "grey90",
+      linewidth = 0.45
+    ),
     axis.text.y = element_text(size = 11)
   )
 

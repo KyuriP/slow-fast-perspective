@@ -1,8 +1,5 @@
 # ==============================================================================
 # Main Figure 4: symptom-specific associations with continuous Slow Risk Load
-#
-# Replaces the old two-panel symptom-map figure. Only the coefficient plot is
-# retained in the main manuscript.
 # ==============================================================================
 
 if (!exists("theme_revised")) {
@@ -54,8 +51,8 @@ fit_one_symptom <- function(symptom_name, adjust_for_other_symptoms = FALSE) {
       symptom = symptom_name,
       model = ifelse(
         adjust_for_other_symptoms,
-        "Symptom-adjusted",
-        "Covariate-adjusted"
+        "Covariates + other symptoms",
+        "Covariates only"
       ),
       estimate = estimate,
       std_error = std.error,
@@ -79,20 +76,23 @@ coef_table <- bind_rows(
 )
 
 symptom_order <- coef_table %>%
-  filter(model == "Symptom-adjusted") %>%
+  filter(model == "Covariates + other symptoms") %>%
   arrange(estimate) %>%
   pull(symptom)
 
 coef_table <- coef_table %>%
   mutate(
     symptom_label = unname(SYMPTOM_LABELS[symptom]),
+    model = factor(
+      model,
+      levels = c(
+        "Covariates only",
+        "Covariates + other symptoms"
+      )
+    ),
     symptom_label = factor(
       symptom_label,
       levels = unname(SYMPTOM_LABELS[symptom_order])
-    ),
-    model = factor(
-      model,
-      levels = c("Covariate-adjusted", "Symptom-adjusted")
     )
   )
 
@@ -122,7 +122,7 @@ fig_04 <- ggplot(
       xmin = lower,
       xmax = upper
     ),
-    width = 0.18,
+    height = 0.18,
     linewidth = 0.65,
     position = position_dodge(width = 0.52)
   ) +
@@ -132,19 +132,23 @@ fig_04 <- ggplot(
   ) +
   scale_color_manual(
     values = c(
-      "Covariate-adjusted" = GREY_COLOR,
-      "Symptom-adjusted" = BLUE_COLOR
+      "Covariates only" = GREY_COLOR,
+      "Covariates + other symptoms" = BLUE_COLOR
     )
   ) +
   scale_shape_manual(
     values = c(
-      "Covariate-adjusted" = 17,
-      "Symptom-adjusted" = 16
+      "Covariates only" = 17,
+      "Covariates + other symptoms" = 16
     )
   ) +
   labs(
-    title = "Associations with continuous Slow Risk Load vary across symptoms",
-    x = "Association with symptom presence\n(log-odds per 1 SD higher Slow Risk Load)",
+    title = "Symptom-specific associations with Slow Risk Load",
+    x = paste(
+      "Association with symptom presence",
+      "(log-odds per 1 SD higher Slow Risk Load)",
+      sep = "\n"
+    ),
     y = NULL,
     color = NULL,
     shape = NULL
@@ -154,7 +158,10 @@ fig_04 <- ggplot(
     legend.position = "bottom",
     legend.justification = "left",
     axis.text.y = element_text(size = 11),
-    panel.grid.major.x = element_line(color = "grey90", linewidth = 0.45)
+    panel.grid.major.x = element_line(
+      color = "grey90",
+      linewidth = 0.45
+    )
   )
 
 save_revised_figure(

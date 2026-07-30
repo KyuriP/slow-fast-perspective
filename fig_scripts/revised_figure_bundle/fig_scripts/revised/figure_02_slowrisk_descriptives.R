@@ -1,9 +1,5 @@
 # ==============================================================================
 # Main Figure 2: Slow Risk Load and observed depressive symptom expression
-#
-# Panel A: continuous Slow Risk Load distribution and median split
-# Panel B: mean PHQ-9 total by Low/High Slow Risk
-# Panel C: observed PHQ-9 symptom prevalence by Low/High Slow Risk
 # ==============================================================================
 
 if (!exists("theme_revised")) {
@@ -11,10 +7,6 @@ if (!exists("theme_revised")) {
 }
 
 ensure_analysis_data()
-
-# ------------------------------------------------------------------------------
-# Panel A: Slow Risk distribution
-# ------------------------------------------------------------------------------
 
 median_slow_z <- stats::median(analysis_df$slow_risk_z, na.rm = TRUE)
 
@@ -27,20 +19,13 @@ slow_distribution <- analysis_df %>%
     )
   )
 
-x_positions <- slow_distribution %>%
-  group_by(slow_group) %>%
-  summarise(
-    x = stats::median(slow_risk_z, na.rm = TRUE),
-    .groups = "drop"
-  )
-
 pA <- ggplot(
   slow_distribution,
   aes(x = slow_risk_z, fill = slow_group)
 ) +
   geom_histogram(
     bins = 55,
-    alpha = 0.80,
+    alpha = 0.82,
     position = "identity",
     color = "white",
     linewidth = 0.15
@@ -51,50 +36,47 @@ pA <- ggplot(
     linewidth = 0.75,
     color = DARK_GREY
   ) +
-  geom_text(
-    data = x_positions,
-    aes(
-      x = x,
-      y = Inf,
-      label = ifelse(
-        slow_group == "Low Slow Risk",
-        "Low Slow Risk",
-        "High Slow Risk"
-      ),
-      color = slow_group
-    ),
-    inherit.aes = FALSE,
-    vjust = 1.45,
-    fontface = "bold",
+  annotate(
+    "text",
+    x = stats::quantile(slow_distribution$slow_risk_z, 0.15, na.rm = TRUE),
+    y = Inf,
+    label = "Low Slow Risk",
+    vjust = 1.35,
     family = FONT_FAMILY,
-    size = 3.8
+    fontface = "bold",
+    size = 3.7,
+    color = LOW_COLOR
+  ) +
+  annotate(
+    "text",
+    x = stats::quantile(slow_distribution$slow_risk_z, 0.84, na.rm = TRUE),
+    y = Inf,
+    label = "High Slow Risk",
+    vjust = 1.35,
+    family = FONT_FAMILY,
+    fontface = "bold",
+    size = 3.7,
+    color = HIGH_COLOR
   ) +
   annotate(
     "text",
     x = median_slow_z,
     y = Inf,
-    label = "Median split",
-    vjust = 3.05,
-    hjust = -0.08,
+    label = "Median",
+    vjust = 3.0,
+    hjust = -0.10,
     family = FONT_FAMILY,
-    size = 3.3,
+    size = 3.1,
     color = DARK_GREY
   ) +
   scale_fill_manual(values = GROUP_COLORS, guide = "none") +
-  scale_color_manual(values = GROUP_COLORS, guide = "none") +
   labs(
     title = "A  Slow Risk Load distribution",
     x = "Slow Risk Load (standardized)",
     y = "Participants"
   ) +
   theme_revised +
-  theme(
-    panel.grid.major.x = element_blank()
-  )
-
-# ------------------------------------------------------------------------------
-# Panel B: PHQ-9 total
-# ------------------------------------------------------------------------------
+  theme(panel.grid.major.x = element_blank())
 
 phq_summary <- analysis_df %>%
   filter(!is.na(PHQsum), !is.na(slow_group)) %>%
@@ -113,55 +95,43 @@ phq_summary <- analysis_df %>%
       slow_group,
       levels = c("Low Slow Risk", "High Slow Risk")
     ),
-    group_label = paste0(
-      ifelse(
-        slow_group == "Low Slow Risk",
-        "Low Slow Risk",
-        "High Slow Risk"
-      ),
-      "\n",
-      "n = ",
-      scales::comma(n)
-    )
+    label = paste0(sprintf("%.2f", mean), "\n", "n = ", scales::comma(n))
   )
 
 pB <- ggplot(
   phq_summary,
-  aes(x = slow_group, y = mean, color = slow_group)
+  aes(y = slow_group, x = mean, color = slow_group)
 ) +
-  geom_errorbar(
-    aes(ymin = lower, ymax = upper),
-    width = 0.12,
+  geom_errorbarh(
+    aes(xmin = lower, xmax = upper),
+    height = 0.16,
     linewidth = 0.8
   ) +
-  geom_point(size = 3.6) +
+  geom_point(size = 3.7) +
   geom_text(
-    aes(label = sprintf("%.2f", mean)),
-    nudge_y = 0.42,
+    aes(label = label),
+    nudge_x = 0.48,
+    hjust = 0,
     family = FONT_FAMILY,
-    size = 3.8,
-    fontface = "bold"
+    size = 3.4,
+    fontface = "bold",
+    lineheight = 0.95
   ) +
   scale_color_manual(values = GROUP_COLORS, guide = "none") +
-  scale_x_discrete(labels = setNames(phq_summary$group_label, phq_summary$slow_group)) +
-  scale_y_continuous(
-    limits = c(0, max(phq_summary$upper) + 1.0),
-    expand = expansion(mult = c(0, 0.02))
+  scale_x_continuous(
+    limits = c(0, max(phq_summary$mean) + 1.8),
+    breaks = c(0, 2, 4, 6, 8)
   ) +
   labs(
     title = "B  Depressive symptom level",
-    x = NULL,
-    y = "Mean PHQ-9 total (95% CI)"
+    x = "Mean PHQ-9 total (95% CI)",
+    y = NULL
   ) +
   theme_revised +
   theme(
-    axis.ticks.x = element_blank(),
-    panel.grid.major.x = element_blank()
+    axis.ticks.y = element_blank(),
+    panel.grid.major.y = element_blank()
   )
-
-# ------------------------------------------------------------------------------
-# Panel C: symptom prevalence
-# ------------------------------------------------------------------------------
 
 prevalence_table <- purrr::map_dfr(SYMPTOMS, function(symptom_name) {
   analysis_df_bin %>%
@@ -226,10 +196,12 @@ pC <- ggplot(
   ) +
   coord_flip() +
   scale_color_manual(values = GROUP_COLORS) +
-  scale_shape_manual(values = c(
-    "Low Slow Risk" = 16,
-    "High Slow Risk" = 17
-  )) +
+  scale_shape_manual(
+    values = c(
+      "Low Slow Risk" = 16,
+      "High Slow Risk" = 17
+    )
+  ) +
   scale_y_continuous(
     labels = scales::label_percent(accuracy = 1),
     limits = c(0, max(prevalence_table$upper) + 0.035)
@@ -249,7 +221,7 @@ pC <- ggplot(
   )
 
 top_row <- pA + pB +
-  plot_layout(widths = c(1.45, 0.85))
+  plot_layout(widths = c(1.25, 0.95))
 
 fig_02 <- top_row / pC +
   plot_layout(heights = c(0.82, 1.28))
@@ -257,6 +229,6 @@ fig_02 <- top_row / pC +
 save_revised_figure(
   plot = fig_02,
   filename = "figure_02_slowrisk_descriptives",
-  width = 8.2,
+  width = 8.6,
   height = 8.5
 )

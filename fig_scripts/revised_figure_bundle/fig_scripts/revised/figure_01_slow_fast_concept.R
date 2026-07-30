@@ -6,14 +6,13 @@ if (!exists("theme_revised")) {
   source("fig_scripts/revised/00_revised_figure_setup.R")
 }
 
-# Network nodes in the fast layer.
 nodes <- tibble::tribble(
-  ~name,         ~x,   ~y,
-  "Sleep",       7.00, 5.10,
-  "Energy",      8.40, 4.55,
-  "Mood",        8.15, 3.05,
-  "Activity",    6.55, 2.75,
-  "Concentration", 6.10, 4.05
+  ~name,            ~x,   ~y,
+  "Sleep",          7.25, 5.05,
+  "Energy",         8.40, 4.45,
+  "Mood",           8.15, 3.25,
+  "Activity",       6.75, 3.00,
+  "Concentration",  6.25, 4.15
 )
 
 edges <- tibble::tribble(
@@ -30,58 +29,57 @@ edges <- tibble::tribble(
   left_join(nodes %>% select(to = name, x_to = x, y_to = y), by = "to")
 
 slow_items <- tibble::tribble(
-  ~label,                      ~x,   ~y,
-  "Economic resources",       2.45, 5.70,
-  "Work and housing",         2.45, 5.05,
-  "Psychosocial stress",      2.45, 4.40,
-  "Physical health",          2.45, 3.75,
-  "Lifestyle conditions",     2.45, 3.10
+  ~label,                  ~x,   ~y,
+  "Economic resources",   2.25, 5.25,
+  "Work and housing",     2.25, 4.55,
+  "Psychosocial stress",  2.25, 3.85,
+  "Physical health",      2.25, 3.15,
+  "Lifestyle conditions", 2.25, 2.45
 )
 
 fig_01 <- ggplot() +
-  # Slow-layer box
   annotate(
     "rect",
-    xmin = 0.45, xmax = 4.45,
-    ymin = 2.40, ymax = 6.55,
+    xmin = 0.45, xmax = 4.15,
+    ymin = 1.75, ymax = 6.35,
     fill = "#E7F4EF",
     color = LOW_COLOR,
     linewidth = 0.9
   ) +
   annotate(
     "text",
-    x = 2.45, y = 6.12,
+    x = 2.30, y = 5.95,
     label = "Slower contextual conditions",
     family = FONT_FAMILY,
     fontface = "bold",
-    size = 5.1
+    size = 4.7
   ) +
   geom_label(
     data = slow_items,
     aes(x = x, y = y, label = label),
     family = FONT_FAMILY,
-    size = 3.7,
+    size = 3.45,
     label.size = 0.25,
+    label.padding = grid::unit(0.16, "lines"),
     fill = "white",
     color = DARK_GREY
   ) +
 
-  # Fast-layer box
   annotate(
     "rect",
-    xmin = 5.15, xmax = 9.70,
-    ymin = 1.45, ymax = 6.55,
+    xmin = 5.85, xmax = 9.55,
+    ymin = 1.75, ymax = 6.35,
     fill = "#EDF4F9",
     color = BLUE_COLOR,
     linewidth = 0.9
   ) +
   annotate(
     "text",
-    x = 7.43, y = 6.12,
-    label = "Faster-changing symptom system",
+    x = 7.70, y = 5.95,
+    label = "Fast symptom layer",
     family = FONT_FAMILY,
     fontface = "bold",
-    size = 5.1
+    size = 4.7
   ) +
   geom_segment(
     data = edges,
@@ -93,7 +91,7 @@ fig_01 <- ggplot() +
     data = nodes,
     aes(x = x, y = y),
     shape = 21,
-    size = 9.0,
+    size = 8.5,
     stroke = 0.7,
     color = DARK_GREY,
     fill = "white"
@@ -102,77 +100,85 @@ fig_01 <- ggplot() +
     data = nodes,
     aes(x = x, y = y, label = name),
     family = FONT_FAMILY,
-    size = 3.0,
+    size = 2.85,
     lineheight = 0.95
   ) +
   annotate(
     "text",
-    x = 7.40, y = 1.82,
-    label = "Edges represent symptom interactions  (J\u1d62\u2c7c)",
+    x = 7.70, y = 2.25,
+    label = "Symptoms are linked by pairwise interactions",
     family = FONT_FAMILY,
-    size = 3.5,
+    size = 3.35,
     color = DARK_GREY
   ) +
 
-  # Slow-to-fast arrow
+  # Slow-to-fast modulation.
   annotate(
     "segment",
-    x = 4.48, y = 4.85,
-    xend = 5.05, yend = 4.85,
+    x = 4.25, y = 4.55,
+    xend = 5.72, yend = 4.55,
     linewidth = 1.0,
     color = HIGH_COLOR,
-    arrow = grid::arrow(length = grid::unit(0.22, "cm"), type = "closed")
+    arrow = grid::arrow(
+      length = grid::unit(0.22, "cm"),
+      type = "closed"
+    )
   ) +
   annotate(
     "text",
-    x = 4.77, y = 5.35,
-    label = "may shift\nsymptom activation  (h\u1d62)",
+    x = 4.98, y = 5.02,
+    label = "may shift\nsymptom activation",
     family = FONT_FAMILY,
     size = 3.35,
     color = HIGH_COLOR,
     lineheight = 0.95
   ) +
 
-  # Fast-to-slow feedback arrow
+  # Fast-to-slow feedback.
   annotate(
     "curve",
-    x = 5.20, y = 2.15,
-    xend = 4.38, yend = 2.78,
+    x = 5.72, y = 2.15,
+    xend = 4.25, yend = 2.15,
     curvature = -0.35,
     linewidth = 0.8,
     linetype = 2,
     color = DARK_GREY,
-    arrow = grid::arrow(length = grid::unit(0.18, "cm"), type = "closed")
+    arrow = grid::arrow(
+      length = grid::unit(0.18, "cm"),
+      type = "closed"
+    )
   ) +
   annotate(
     "text",
-    x = 4.95, y = 1.72,
+    x = 4.98, y = 1.55,
     label = "symptoms may feed back over time",
     family = FONT_FAMILY,
-    size = 3.2,
+    size = 3.10,
     color = DARK_GREY
   ) +
 
-  # Bottom synthesis statement
   annotate(
     "rect",
-    xmin = 1.15, xmax = 9.00,
-    ymin = 0.20, ymax = 1.00,
+    xmin = 1.05, xmax = 8.95,
+    ymin = 0.25, ymax = 1.05,
     fill = "white",
     color = "grey55",
     linewidth = 0.55
   ) +
   annotate(
     "text",
-    x = 5.08, y = 0.60,
-    label = "Group differences may occur in symptom activation, symptom interactions, or both.",
+    x = 5.00, y = 0.65,
+    label = paste(
+      "Groups may differ in symptom activation,",
+      "symptom interactions, or both."
+    ),
     family = FONT_FAMILY,
     fontface = "bold",
-    size = 4.25
+    size = 4.05
   ) +
   coord_cartesian(
     xlim = c(0, 10),
-    ylim = c(0, 7),
+    ylim = c(0, 6.8),
     clip = "off"
   ) +
   theme_void(base_family = FONT_FAMILY) +
@@ -184,5 +190,5 @@ save_revised_figure(
   plot = fig_01,
   filename = "figure_01_slow_fast_concept",
   width = 8.3,
-  height = 5.8
+  height = 5.6
 )
