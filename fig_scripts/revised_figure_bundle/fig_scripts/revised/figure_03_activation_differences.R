@@ -78,22 +78,32 @@ fig_03 <- ggplot(
     aes(
       x = ci_95_lower,
       xend = ci_95_upper,
-      yend = symptom_label
+      yend = symptom_label,
+      color = direction
     ),
     linewidth = 0.9,
-    color = "grey35"
-  ) +
+    alpha = 0.55
+  )+
   geom_point(
-    aes(fill = direction),
+    aes(
+      fill = direction,
+      color = direction
+    ),
     shape = 21,
     size = 3.5,
-    stroke = 0.65,
-    color = "black"
-  ) +
-  scale_fill_manual(
+    stroke = 0.9
+  )+
+  scale_color_manual(
     values = c(
       "Higher in Low Slow Risk" = LOW_COLOR,
       "Higher in High Slow Risk" = HIGH_COLOR
+    ),
+    guide = "none"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Higher in Low Slow Risk" = scales::alpha(LOW_COLOR, 0.35),
+      "Higher in High Slow Risk" = scales::alpha(HIGH_COLOR, 0.35)
     ),
     guide = "none"
   ) +
@@ -104,19 +114,26 @@ fig_03 <- ggplot(
     xlim = c(x_min, x_max)
   ) +
   labs(
-    title = "Symptom activation differences",
-    subtitle = paste(
-      "\u2190 Higher in Low Slow Risk",
-      "     Higher in High Slow Risk \u2192"
+    # title = "Symptom activation differences",
+    subtitle = paste0(
+      "<span style='color:", LOW_COLOR, ";'>&larr; Higher in Low Slow Risk</span>",
+      "        ",
+      "<span style='color:", HIGH_COLOR, ";'>Higher in High Slow Risk &rarr;</span>"
     ),
     x = "Activation difference (High minus Low Slow Risk)",
     y = NULL
   ) +
   theme_revised +
   theme(
-    plot.subtitle = element_text(
+    plot.title = element_text(
+      size = 16,
+      face = "bold",
       hjust = 0.5,
-      color = DARK_GREY,
+      margin = margin(b = 4)
+    ),
+    plot.subtitle = ggtext::element_markdown(
+      size = 13,
+      hjust = 0,
       margin = margin(b = 6)
     ),
     panel.grid.major.x = element_line(
@@ -129,6 +146,7 @@ fig_03 <- ggplot(
 save_revised_figure(
   plot = fig_03,
   filename = "figure_03_activation_differences",
-  width = 7.5,
+  width = 9.5,
   height = 5.8
 )
+

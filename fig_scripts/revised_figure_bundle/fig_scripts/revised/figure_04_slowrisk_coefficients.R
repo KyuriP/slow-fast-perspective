@@ -102,6 +102,22 @@ write.csv(
   row.names = FALSE
 )
 
+x_min <- min(coef_table$lower, na.rm = TRUE)
+x_max <- max(coef_table$upper, na.rm = TRUE)
+
+# Add a small margin so the outer confidence intervals are not clipped
+x_padding <- 0.04 * (x_max - x_min)
+
+x_limits <- c(
+  min(0, x_min - x_padding),
+  x_max + x_padding
+)
+
+x_breaks <- pretty(
+  x_limits,
+  n = 5
+)
+
 fig_04 <- ggplot(
   coef_table,
   aes(
@@ -142,6 +158,11 @@ fig_04 <- ggplot(
       "Covariates + other symptoms" = 16
     )
   ) +
+  scale_x_continuous(
+    breaks = x_breaks,
+    limits = x_limits,
+    expand = expansion(mult = c(0, 0))
+  ) +
   labs(
     title = "Symptom-specific associations with Slow Risk Load",
     x = paste(
@@ -153,11 +174,24 @@ fig_04 <- ggplot(
     color = NULL,
     shape = NULL
   ) +
+  guides(
+    color = guide_legend(nrow = 1, byrow = TRUE),
+    shape = guide_legend(nrow = 1, byrow = TRUE)
+  ) +
   theme_revised +
   theme(
+    plot.title = element_text(
+      size = 16,
+      face = "bold",
+      hjust = 0.5
+    ),
+    axis.title.x = element_text(size = 13),
+    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 12),
     legend.position = "bottom",
-    legend.justification = "left",
-    axis.text.y = element_text(size = 11),
+    legend.justification = "center",
+    legend.box.just = "center",
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_line(
       color = "grey90",
       linewidth = 0.45
@@ -167,6 +201,6 @@ fig_04 <- ggplot(
 save_revised_figure(
   plot = fig_04,
   filename = "figure_04_slowrisk_coefficients",
-  width = 7.6,
+  width = 9.5,
   height = 6.1
 )
