@@ -1,0 +1,19 @@
+"group","symptom","prevalence"
+"Low Slow Risk","anh",0.38107023982248
+"Low Slow Risk","dep",0.204915934112828
+"Low Slow Risk","slp",0.408295638815396
+"Low Slow Risk","ene",0.538448408295639
+"Low Slow Risk","app",0.27199795169412
+"Low Slow Risk","glt",0.141674490057182
+"Low Slow Risk","con",0.18255526158573
+"Low Slow Risk","mot",0.0894426901083895
+"Low Slow Risk","sui",0.0288469744815226
+"High Slow Risk","anh",0.637644821027149
+"High Slow Risk","dep",0.488068476569255
+"High Slow Risk","slp",0.607816012450285
+"High Slow Risk","ene",0.733788690990835
+"High Slow Risk","app",0.491786270102023
+"High Slow Risk","glt",0.336590005187619
+"High Slow Risk","con",0.390281860625973
+"High Slow Risk","mot",0.298201625453917
+"High Slow Risk","sui",0.126232059484697

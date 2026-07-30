@@ -1,0 +1,30 @@
+Comparison: Low versus High Slow Risk
+
+PRIMARY PARAMETERIZATION
+beta is constrained equal across groups in every model.
+This aligns the psychonetrics comparison with the manuscript's direct
+J/h formulation, in which there is no separate group-specific beta.
+
+NESTED TESTS
+1. free_J_free_h versus equal_J_free_h:
+   tests whether equality of pairwise interactions worsens fit.
+2. free_J_free_h versus free_J_equal_h:
+   tests whether equality of activation parameters worsens fit.
+3. equal_J_free_h versus equal_J_equal_h:
+   tests whether activation differences are needed when J is shared.
+4. free_J_equal_h versus equal_J_equal_h:
+   tests whether interaction differences are needed when h is shared.
+
+NON-NESTED COMPARISON
+equal_J_free_h and free_J_equal_h are not nested in one another.
+Compare them using AIC/BIC, not a likelihood-ratio test.
+
+INTERPRETATION CAUTION
+With this large sample, a very small discrepancy may yield a small p-value.
+Inspect AIC/BIC, parameter magnitudes, and substantive changes alongside
+the likelihood-ratio tests. Do not equate non-significance with proof of
+exact equality or significance with a substantively important difference.
+
+BASELINE PROBABILITIES
+The exported baseline probabilities are P(X_i = 1) when all other symptoms
+are set to zero under the fitted model. They are not observed prevalences.

@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+\caption{Exact multigroup Ising model comparison for Low and High Slow Risk groups.}
+\label{tab:ising_model_comparison}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{@{}Lrrrrrr@{}}
+\toprule
+\textbf{Model} & \textbf{$k$} & \textbf{Log likelihood} & \textbf{AIC} &
+\textbf{$\Delta$AIC} & \textbf{BIC} & \textbf{$\Delta$BIC} \\
+\midrule
+Group-specific $J$, group-specific $h$ & 90 & -93,555.20 & 187,290.40 & 0.00 & 188,015.40 & 242.83 \\
+Common $J$, group-specific $h$ & 54 & -93,614.78 & 187,337.60 & 47.17 & 187,772.60 & 0.00 \\
+Group-specific $J$, common $h$ & 81 & -93,611.51 & 187,385.00 & 94.62 & 188,037.50 & 264.95 \\
+Common $J$, common $h$ & 45 & -95,229.03 & 190,548.10 & 3,257.66 & 190,910.60 & 3,137.99 \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\footnotesize
+\emph{Note.} $J$ denotes pairwise symptom-interaction parameters and
+$h$ denotes symptom-activation parameters. Lower AIC and BIC values
+indicate better relative support under the respective criterion.
+\end{table}

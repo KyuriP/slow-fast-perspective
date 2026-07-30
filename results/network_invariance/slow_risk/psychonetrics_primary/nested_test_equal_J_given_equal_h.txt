@@ -1,0 +1,5 @@
+           model DF       AIC       BIC RMSEA   Chisq Chisq_diff DF_diff  p_value
+  free_J_equal_h  8 187311.02 187971.57 0.018   36.56                            
+ equal_J_equal_h 44 189959.33 190329.88 0.073 2756.88    2720.32      36 < 0.0001
+
+Note: Chi-square difference test assumes models are nested.

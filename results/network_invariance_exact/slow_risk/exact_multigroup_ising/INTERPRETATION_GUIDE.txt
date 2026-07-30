@@ -1,0 +1,31 @@
+Comparison: Low versus High Slow Risk
+
+MODEL DEFINITIONS
+free_J_free_h: group-specific interactions and activation parameters.
+equal_J_free_h: equal interactions, group-specific activation parameters.
+free_J_equal_h: group-specific interactions, equal activation parameters.
+equal_J_equal_h: equal interactions and equal activation parameters.
+
+NESTED TESTS
+free_J_free_h vs equal_J_free_h tests exact equality of the 36 J edges.
+free_J_free_h vs free_J_equal_h tests exact equality of the 9 h values.
+equal_J_free_h vs equal_J_equal_h tests equality of h given equal J.
+free_J_equal_h vs equal_J_equal_h tests equality of J given equal h.
+
+NON-NESTED COMPARISON
+equal_J_free_h and free_J_equal_h are not nested.
+Compare them using AIC and BIC, not a likelihood-ratio test.
+
+LARGE-SAMPLE CAUTION
+With approximately 24,000 observations, small departures from exact
+equality can produce very small p-values. Interpret likelihood-ratio tests
+alongside AIC, BIC, per-participant log-likelihood loss, and parameter
+magnitudes.
+
+BASELINE PROBABILITIES
+plogis(h_i) is the fitted probability of symptom i when all other symptoms
+are set to zero. It is not the observed marginal prevalence.
+
+THIS SCRIPT USES NO BETA PARAMETER.
+Therefore, equality of J and h is tested directly in the same 0/1
+parameterization used in the manuscript.

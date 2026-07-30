@@ -1,0 +1,38 @@
+                       _                      _        _          
+                      | |                    | |      (_)         
+  _ __  ___ _   _  ___| |__   ___  _ __   ___| |_ _ __ _  ___ ___ 
+ |    \/ __| | | |/ __|  _ \ /   \|  _ \ / _ \ __|  __| |/ __/ __|
+ |  O--------------------------O  | | | |  __/ |_| |  | | (__\__ \
+ | .__/|___/\__, |\___|_| |_|\___/|_| |_|\___|\__|_|  |_|\___|___/
+ | |         __/ |                                                
+ |_|        |___/                                    Version: 0.15
+
+General: 
+	- psychonetrics version: 0.15 
+	- Model last edited at: 2026-07-29 13:26:43.105644
+
+Sample: 
+	- Number of cases: 23283 
+	- Number of groups: 2 
+	- Number of observed summary statistics: 90
+
+Model: 
+	- Model used: Ising model 
+	- Submodel used: (0 & 1) 
+	- Number of parameters: 82
+
+Estimation: 
+	- Optimizer used: nlminb 
+	- Estimator used: Maximum likelihood estimation (ML) 
+	- Message: relative convergence (4)
+
+Fit: 
+	- Model Fit Test Statistic: 36.56 
+	- Degrees of freedom: 8 
+	- p-value (Chi-square): < 0.0001
+
+Tips: 
+	- Use 'psychonetrics::compare' to compare psychonetrics models 
+	- Use 'psychonetrics::fit' to inspect model fit 
+	- Use 'psychonetrics::parameters' to inspect model parameters 
+	- Use 'psychonetrics::MIs' to inspect modification indices
