@@ -41,16 +41,16 @@
 
 SEED <- 20260729L
 
-# Run the standard Network Comparison Test as a complementary analysis.
-# Set FALSE when you already have the final NCT output and only need the exact
-# multigroup model comparison.
-RUN_NCT <- TRUE
+# The definitive 10,000-permutation NCT is run separately in
+# R/05_nct_final_10000.R. Keep this FALSE in the production pipeline.
+RUN_NCT <- FALSE
 
 # Start with Low versus High Slow Risk. Set TRUE only after the primary analysis
 # has run successfully.
 RUN_SECONDARY_COMPARISONS <- FALSE
 
-# NCT settings. Use 1,000 for a working run and 5,000 or more for the final run.
+# Optional embedded NCT settings. These are retained only for exploratory use.
+# The manuscript's final NCT is produced by R/05_nct_final_10000.R.
 NCT_ITERATIONS <- 1000L
 NCT_GAMMA <- 0.25
 NCT_EDGE_ADJUSTMENT <- "holm"
@@ -542,6 +542,15 @@ fit_exact_two_group_model <- function(
     max(hessian_eigenvalues) / min(hessian_eigenvalues)
   } else {
     Inf
+  }
+  
+  if (!hessian_positive_definite) {
+    warning(
+      "The Hessian is not positive definite for model ",
+      model,
+      ". Minimum eigenvalue = ",
+      format(min_hessian_eigenvalue, scientific = TRUE)
+    )
   }
   
   vcov_matrix <- tryCatch(
@@ -1310,16 +1319,31 @@ run_exact_comparison <- function(
     )
   )
 
-  convergence_summary <- model_comparison[
-    ,
-    c(
-      "model",
-      "convergence",
-      "max_abs_gradient",
-      "mean_abs_gradient"
-    ),
-    drop = FALSE
-  ]
+  convergence_summary <- do.call(
+    rbind,
+    lapply(
+      names(fits),
+      function(model_name) {
+        fit <- fits[[model_name]]
+        
+        data.frame(
+          model = model_name,
+          convergence = fit$convergence,
+          max_abs_gradient = fit$max_abs_gradient,
+          mean_abs_gradient = fit$mean_abs_gradient,
+          hessian_positive_definite =
+            fit$hessian_positive_definite,
+          min_hessian_eigenvalue =
+            fit$min_hessian_eigenvalue,
+          hessian_condition_number =
+            fit$hessian_condition_number,
+          covariance_available =
+            !is.null(fit$vcov),
+          stringsAsFactors = FALSE
+        )
+      }
+    )
+  )
 
   write_csv(
     convergence_summary,

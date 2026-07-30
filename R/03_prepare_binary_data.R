@@ -1,22 +1,33 @@
-# ───────────────────────────────────────────────────────────────────────────────
-# 03_prepare_binary_data.R
-# Binarize PHQ-9 symptoms for the joint Ising model
-# ───────────────────────────────────────────────────────────────────────────────
+# ==============================================================================
+# R/03_prepare_binary_data.R
+#
+# Dichotomize PHQ-9 symptoms for the binary Ising analyses.
+#
+# Requires:
+#   R/00_setup.R
+#   R/01_prepare_analysis_data.R
+#   R/02_model_helpers.R
+# ==============================================================================
 
-thr <- 1L
+threshold <- 1L
 
 analysis_df_bin <- analysis_df
 
 analysis_df_bin[symptoms] <- lapply(
   analysis_df_bin[symptoms],
   to_binary01,
-  thr = thr
+  thr = threshold
 )
 
 distinct_counts <- vapply(
   analysis_df_bin[symptoms],
-  function(v) length(unique(v[!is.na(v)])),
+  function(x) length(unique(x[!is.na(x)])),
   integer(1)
 )
 
-stopifnot(all(distinct_counts <= 2))
+if (!all(distinct_counts <= 2L)) {
+  stop(
+    "Binarization failed for: ",
+    paste(names(distinct_counts)[distinct_counts > 2L], collapse = ", ")
+  )
+}
