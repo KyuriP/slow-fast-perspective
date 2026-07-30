@@ -208,7 +208,7 @@ draw_nct_figure <- function() {
     layout = layout_shared,
     labels = node_labels,
     label.cex = 1.15,
-    color = "white",
+    edge.color = LOW_COLOR,
     border.color = LOW_COLOR,
     border.width = 2,
     vsize = 7.8,
@@ -230,7 +230,7 @@ draw_nct_figure <- function() {
     layout = layout_shared,
     labels = node_labels,
     label.cex = 1.15,
-    color = "white",
+    edge.color = HIGH_COLOR,
     border.color = HIGH_COLOR,
     border.width = 2,
     vsize = 7.8,
@@ -248,15 +248,22 @@ draw_nct_figure <- function() {
   # --------------------------------------------------------------------------
   par(mar = c(4.5, 3.2, 3.4, 2.0), family = "")
   
-  x_min <- 20
-  x_max <- 26
+  x_min <- 21
+  x_max <- 25
   x_mid <- mean(c(GS_low, GS_high))
-  y_dumbbell <- 0.78
+  
+  # Put dots essentially on the x-axis
+  y_axis_bottom <- 0.52
+  y_dumbbell <- 0.48
+  
+  # Put labels and values above the dots
+  y_label <- 0.95
+  y_number <- 0.84
   
   plot(
     NA,
     xlim = c(x_min, x_max),
-    ylim = c(0.50, 1.45),
+    ylim = c(y_axis_bottom, 1.45),
     xlab = "Global strength",
     ylab = "",
     xaxt = "n",
@@ -265,7 +272,7 @@ draw_nct_figure <- function() {
     main = "C  Global strength"
   )
   
-  # Wider, regularly spaced x-axis
+  # Draw the axis first
   axis(
     side = 1,
     at = seq(x_min, x_max, by = 1),
@@ -273,52 +280,48 @@ draw_nct_figure <- function() {
     tck = -0.025
   )
   
-  # Short guides from each point toward its exact x-axis position
+  axis_y <- par("usr")[3]
+  y_dumbbell <- axis_y
+  
+  # Dashed vertical guides
   segments(
     x0 = c(GS_low, GS_high),
-    y0 = 0.54,
+    y0 = y_number - 0.03,
     x1 = c(GS_low, GS_high),
-    y1 = y_dumbbell - 0.04,
+    y1 = y_dumbbell,
     col = "grey75",
     lty = 3,
-    lwd = 1
+    lwd = 1,
+    xpd = NA
   )
   
-  # Dumbbell connector, positioned closer to the x-axis
+  # Horizontal dumbbell connector
   segments(
     x0 = GS_low,
     y0 = y_dumbbell,
     x1 = GS_high,
     y1 = y_dumbbell,
     lwd = 2.2,
-    col = "grey55"
+    col = "grey55",
+    xpd = NA
   )
   
-  # Group dots
+  # Dots drawn last so they appear in front of the axis and connector
   points(
-    GS_low,
-    y_dumbbell,
+    x = c(GS_low, GS_high),
+    y = rep(y_dumbbell, 2),
     pch = 21,
-    bg = LOW_COLOR,
+    bg = c(LOW_COLOR, HIGH_COLOR),
     col = "black",
-    cex = 2.0,
-    lwd = 1
+    cex = 2,
+    lwd = 1,
+    xpd = NA
   )
   
-  points(
-    GS_high,
-    y_dumbbell,
-    pch = 21,
-    bg = HIGH_COLOR,
-    col = "black",
-    cex = 2.0,
-    lwd = 1
-  )
-  
-  # Group labels above the dots
+  # Group labels
   text(
     GS_low,
-    y_dumbbell + 0.13,
+    y_label,
     labels = "Low Slow Risk",
     col = LOW_COLOR,
     cex = 0.92
@@ -326,16 +329,16 @@ draw_nct_figure <- function() {
   
   text(
     GS_high,
-    y_dumbbell + 0.13,
+    y_label,
     labels = "High Slow Risk",
     col = HIGH_COLOR,
     cex = 0.92
   )
   
-  # Exact values beneath the dots
+  # Exact values directly below the labels
   text(
     c(GS_low, GS_high),
-    y_dumbbell - 0.13,
+    y_number,
     labels = sprintf("%.2f", c(GS_low, GS_high)),
     col = c(LOW_COLOR, HIGH_COLOR),
     font = 2,
