@@ -14,7 +14,7 @@ The project develops a **slow–fast perspective** on group differences in psych
 
 ## Study overview
 
-The empirical illustration uses baseline data from the **HELIUS cohort** in Amsterdam and nine binary PHQ-9 symptom indicators. Contextual conditions are summarized in a composite measure called **Slow Risk Load**.
+The empirical illustration uses baseline data from the HELIUS cohort in Amsterdam and nine binary PHQ-9 symptom indicators. Contextual conditions are summarized in a composite measure called *Slow Risk Load*.
 
 The analysis includes:
 
@@ -80,7 +80,7 @@ results/appendix/
 
 ## Data availability
 
-The individual-level HELIUS data are **not included in this repository** because of participant privacy and study-governance requirements. Researchers may apply for access through the HELIUS study's established data-access procedures.
+The individual-level HELIUS data are *not* included in this repository because of participant privacy and study-governance requirements. Researchers may apply for access through the HELIUS study's established data-access procedures.
 
 The repository contains code and non-sensitive derived outputs needed to document the analyses and reproduce manuscript figures once authorized data are available in the expected local format.
 
