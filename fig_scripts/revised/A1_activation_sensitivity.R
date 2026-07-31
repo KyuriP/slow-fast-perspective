@@ -270,9 +270,22 @@ fig_S2 <- ggplot(
     panel.grid.major.x = element_line(color = "grey90", linewidth = 0.45)
   )
 
-save_revised_figure(
+dir.create("figs", showWarnings = FALSE, recursive = TRUE)
+
+ggsave(
+  filename = "figs/figure_A1_activation_sensitivity.pdf",
   plot = fig_S2,
-  filename = "supp_figure_S2_activation_sensitivity",
   width = 7.7,
-  height = 6.0
+  height = 6.0,
+  units = "in",
+  device = cairo_pdf
+)
+
+ggsave(
+  filename = "figs/figure_A1_activation_sensitivity.png",
+  plot = fig_S2,
+  width = 7.7,
+  height = 6.0,
+  units = "in",
+  dpi = 300
 )
