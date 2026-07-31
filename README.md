@@ -1,7 +1,7 @@
 # Slow–Fast Perspective on Psychopathology Networks
 
 <p align="center">
-  <img src="figs/slowfast.png" width="760" alt="Coupled slow–fast perspective linking contextual conditions and depressive symptoms">
+  <img src="figs/slowfast.png" width="460" alt="Coupled slow–fast perspective linking contextual conditions and depressive symptoms">
 </p>
 
 This repository contains the analysis and figure-generation code for the manuscript:
@@ -10,7 +10,7 @@ This repository contains the analysis and figure-generation code for the manuscr
 
 The project develops a **slow–fast perspective** on group differences in psychopathology networks. Depressive symptoms are treated as a relatively fast-changing system, while social, economic, psychosocial, health-related, and lifestyle conditions form a more slowly varying contextual layer. The central question is whether group differences in depressive symptom expression are reflected in symptom–symptom interactions, symptom-activation parameters, or both.
 
-A preprint will be added here soon.
+*A preprint will be added here soon.*
 
 ## Study overview
 
@@ -78,35 +78,12 @@ results/network_invariance_exact/slow_risk/nct_10000/
 results/appendix/
 ```
 
-## Figures
-
-The manuscript uses the following main figures:
-
-```text
-figs/three_panel_network_analysis_infographic.png
-figs/slowfast.png
-figs/fig2_refined.pdf
-figs/figure_nct_comparison.pdf
-figs/figure_03_activation_differences.pdf
-figs/figure_04_slowrisk_coefficients.pdf
-figs/figure_A1_activation_sensitivity.pdf
-```
-
-Figure scripts are stored in `fig_scripts/`. Scripts and filenames are being standardized as the manuscript approaches preprint release.
-
 ## Data availability
 
 The individual-level HELIUS data are **not included in this repository** because of participant privacy and study-governance requirements. Researchers may apply for access through the HELIUS study's established data-access procedures.
 
 The repository contains code and non-sensitive derived outputs needed to document the analyses and reproduce manuscript figures once authorized data are available in the expected local format.
 
-The main data-preparation script currently expects:
-
-```text
-data/helius.sav
-```
-
-This file should remain untracked and must not be uploaded to GitHub.
 
 ## Software
 
@@ -138,11 +115,3 @@ For now, please cite this repository as:
 Park, K. et al. Slow–Fast Perspective on Psychopathology Networks.
 GitHub repository: https://github.com/KyuriP/slow-fast-perspective
 ```
-
-## Authors
-
-Kyuri Park, Denny Borsboom, Mike Lees, Johan Bollen, Leonie Elsenburg, Mary Nicolaou, Karien Stronks, and Vítor V. Vasconcelos.
-
-## License
-
-A license has not yet been specified. Add a `LICENSE` file before the public preprint release so that reuse conditions are explicit.
